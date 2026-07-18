@@ -1,0 +1,48 @@
+.dashboard {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+.hero {
+  text-align: center;
+  padding: 48px 0;
+
+  h1 {
+    margin-bottom: 24px;
+  }
+}
+
+.actions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+
+  mat-icon {
+    margin-right: 8px;
+  }
+}
+
+.recipe-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.empty {
+  text-align: center;
+  color: rgba(0, 0, 0, 0.5);
+  padding: 24px;
+}
+
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fdecea;
+  color: #b71c1c;
+  border-radius: 4px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}

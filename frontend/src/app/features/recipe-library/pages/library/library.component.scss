@@ -1,0 +1,58 @@
+.library {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 16px;
+  text-align: center;
+}
+
+.library h1 {
+  margin-bottom: 24px;
+}
+
+.search-field {
+  display: block;
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto 24px;
+}
+
+.recipe-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  text-align: left;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 32px;
+}
+
+.empty {
+  text-align: center;
+  color: rgba(0, 0, 0, 0.5);
+  padding: 48px 24px;
+
+  p {
+    margin: 12px 0 16px;
+  }
+}
+
+.empty-icon {
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+  opacity: 0.4;
+}
+
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fdecea;
+  color: #b71c1c;
+  border-radius: 4px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}

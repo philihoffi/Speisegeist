@@ -1,0 +1,62 @@
+<app-header></app-header>
+<div class="generator">
+  <h1>Rezept generieren</h1>
+
+  <mat-card>
+    <mat-card-content>
+      <div class="ingredient-input">
+        <mat-form-field appearance="outline" class="grow">
+          <mat-label>Zutat hinzufügen</mat-label>
+          <input matInput [(ngModel)]="ingredientInput" (keyup.enter)="addIngredient()"
+                 placeholder="z.B. Tofu, Tomaten, Zwiebeln">
+        </mat-form-field>
+        <button mat-icon-button color="primary" (click)="addIngredient()" [disabled]="!ingredientInput.trim()">
+          <mat-icon>add</mat-icon>
+        </button>
+      </div>
+
+      <mat-chip-set class="ingredients">
+        @for (ing of ingredients; track $index) {
+          <mat-chip (removed)="removeIngredient($index)">
+            {{ ing }}
+            <button matChipRemove><mat-icon>cancel</mat-icon></button>
+          </mat-chip>
+        }
+      </mat-chip-set>
+
+      <div class="preferences">
+        <mat-form-field appearance="outline">
+          <mat-label>Küche</mat-label>
+          <input matInput [(ngModel)]="cuisine" placeholder="z.B. Fränkisch, Italienisch">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Max. Kochzeit (Min.)</mat-label>
+          <input matInput type="number" [(ngModel)]="cookTime" min="5">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Portionen</mat-label>
+          <input matInput type="number" [(ngModel)]="servings" min="1" max="20">
+        </mat-form-field>
+      </div>
+
+      @if (recipeService.error$ | async; as error) {
+        <div class="error-message">{{ error }}</div>
+      }
+
+      <button mat-raised-button color="primary" class="generate-btn"
+              (click)="generate()"
+              [disabled]="ingredients.length === 0 || (recipeService.loading$ | async)">
+        @if (recipeService.loading$ | async) {
+          <mat-spinner diameter="20" class="inline-spinner"></mat-spinner>
+        } @else {
+          <ng-container>
+            <mat-icon>auto_awesome</mat-icon>
+            Generieren
+          </ng-container>
+        }
+      </button>
+    </mat-card-content>
+  </mat-card>
+</div>

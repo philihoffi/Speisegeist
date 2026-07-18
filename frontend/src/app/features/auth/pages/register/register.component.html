@@ -1,0 +1,55 @@
+<div class="auth-container">
+  <mat-card class="auth-card">
+    <mat-card-header>
+      <mat-card-title><mat-icon>restaurant</mat-icon> Speisegeist — Registrieren</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>E-Mail</mat-label>
+          <input matInput type="email" formControlName="email" autocomplete="email">
+          @if (form.controls['email'].hasError('required')) {
+            <mat-error>E-Mail ist erforderlich</mat-error>
+          }
+          @if (form.controls['email'].hasError('email')) {
+            <mat-error>Ungültige E-Mail-Adresse</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Passwort</mat-label>
+          <input matInput type="password" formControlName="password" autocomplete="new-password">
+          @if (form.controls['password'].hasError('minlength')) {
+            <mat-error>Mindestens 8 Zeichen</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Passwort bestätigen</mat-label>
+          <input matInput type="password" formControlName="confirmPassword" autocomplete="new-password">
+        </mat-form-field>
+
+        @if (form.hasError('passwordMismatch') && form.get('confirmPassword')?.touched) {
+          <div class="error-message">
+            Passwörter stimmen nicht überein
+          </div>
+        }
+        @if (error) {
+          <div class="error-message">{{ error }}</div>
+        }
+
+        <button mat-raised-button color="primary" type="submit" class="full-width"
+                [disabled]="form.invalid || loading">
+          @if (loading) {
+            <mat-spinner diameter="20" class="inline-spinner"></mat-spinner>
+          } @else {
+            <span>Registrieren</span>
+          }
+        </button>
+      </form>
+    </mat-card-content>
+    <mat-card-actions>
+      <a mat-button routerLink="/auth/login">Bereits registriert? Anmelden</a>
+    </mat-card-actions>
+  </mat-card>
+</div>

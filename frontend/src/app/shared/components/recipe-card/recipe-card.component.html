@@ -1,0 +1,28 @@
+<mat-card class="recipe-card" (click)="open()">
+  <mat-card-header>
+    <mat-card-title>{{ recipe.name }}</mat-card-title>
+    @if (recipe.description) {
+      <mat-card-subtitle>{{ recipe.description | slice:0:80 }}</mat-card-subtitle>
+    }
+  </mat-card-header>
+  <mat-card-content>
+    <div class="meta">
+      @if (totalTime() > 0) {
+        <span><mat-icon inline>schedule</mat-icon> {{ totalTime() }} Min.</span>
+      }
+      @if (recipe.estimatedKcal) {
+        <span><mat-icon inline>local_fire_department</mat-icon> ~{{ recipe.estimatedKcal }} kcal</span>
+      }
+      @if (recipe.rating) {
+        <span><mat-icon inline>star</mat-icon> {{ recipe.rating | number:'1.1-1' }}</span>
+      }
+    </div>
+    @if (recipe.tags.length > 0) {
+      <mat-chip-set>
+        @for (tag of recipe.tags.slice(0, 3); track tag) {
+          <mat-chip>{{ tag }}</mat-chip>
+        }
+      </mat-chip-set>
+    }
+  </mat-card-content>
+</mat-card>

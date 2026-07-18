@@ -37,6 +37,33 @@
 
 ---
 
+## 🚧 Aktueller Stand (2026-07-18)
+
+**Phase 1 Grundstruktur steht und ist end-to-end verifiziert:**
+- ✅ Backend komplett: Entities, Repositories, Security/JWT, Services, Controller, Exception-Handling
+- ✅ Flyway-Migration läuft, Hibernate-Schema-Validierung besteht
+- ✅ Smoke-Test erfolgreich: Register → Login → Rezept anlegen → bewerten → suchen → löschen; User-Scoping greift (fremde Rezepte → 404)
+- ✅ Frontend: Alle Komponenten (Login, Register, Dashboard, Generator, Bibliothek, Detail, Header, Recipe-Card) mit getrennten `.ts`/`.html`/`.scss`-Dateien; Build fehlerfrei
+- ✅ PostgreSQL 17 via `docker compose up -d postgres`
+- ✅ Suche über Name **+ Zutaten + Tags** (Case-Insensitive); zusätzlich exakter Tag-Filter (`?tag=`)
+- ✅ `RecipeService.updateRecipe` ist nun null-sicher (partielles Update löscht keine Felder mehr)
+- ✅ OpenRouter-Retry jetzt auch bei 5xx und Timeouts (nicht nur 429)
+- ✅ E-Mail-Normalisierung (lowercase/trim) in Register/Login
+- ✅ JPA-Entities (`User`, `Recipe`) nutzen `@EqualsAndHashCode(onlyExplicitlyIncluded)` statt `@Data`
+- ✅ Backend Unit- & Integrations-Tests (AuthService, RecipeService, Repository-Suche) gegen H2
+- ✅ Backend-/Frontend-Dockerfiles, `nginx.conf` (SPA + `/api`-Proxy), Root-`README.md`
+- ⬜ Offen: KI-Generierung mit echtem OpenRouter-Key end-to-end testen, Frontend-Unit-Tests (Vitest), Shared Error-Banner/Loading-Spinner, Inline-Edit & Cook-Mode-Link
+
+**Spring-Boot-4-Stolpersteine (dokumentiert, bereits behoben):**
+- Flyway braucht `spring-boot-starter-flyway` — `flyway-core` allein löst keine Auto-Konfiguration mehr aus
+- Boot 4 nutzt **Jackson 3** (`tools.jackson.*`) — kein `com.fasterxml`-ObjectMapper-Bean; auch die HTTP-Converter arbeiten mit Jackson 3
+- Lombok braucht auf neueren JDKs explizite Compiler-Konfiguration (`<proc>full</proc>` + `annotationProcessorPaths`)
+- `ClientHttpRequestFactories` (Boot-3-API) existiert nicht mehr → `JdkClientHttpRequestFactory` verwenden
+- Hibernate-Validierung: `Double`-Felder brauchen `DOUBLE PRECISION` (nicht `DECIMAL`) in PostgreSQL
+- `@OrderColumn` und ein gleichnamiges Embeddable-Feld dürfen nicht dieselbe Spalte mappen (CookingStep: `stepNumber`-Feld entfernt, Reihenfolge via `@OrderColumn(step_number)`)
+
+---
+
 ## Tech Stack
 
 ### Backend
@@ -175,10 +202,12 @@ shopping_items (id, userId FK, recipeId FK, name, quantity, unit,
 - `backend/src/main/resources/db/migration/V1__initial_schema.sql`
 
 **Tasks:**
-- [ ] PostgreSQL Schema für User, Recipe, RecipeIngredient, CookingStep
-- [ ] Indices auf userId, name, tags, createdAt
-- [ ] Foreign Keys mit Cascade Delete
-- [ ] Testlauf auf frischer PostgreSQL-Instanz
+- [x] PostgreSQL Schema für User, Recipe, RecipeIngredient, CookingStep
+- [x] Indices auf userId, name, tags, createdAt
+- [x] Foreign Keys mit Cascade Delete
+- [x] Testlauf auf frischer PostgreSQL-Instanz
+
+> Hinweis: `Double`-Felder als `DOUBLE PRECISION` (nicht `DECIMAL`), sonst schlägt `ddl-auto=validate` fehl.
 
 **Dependencies:** Keine
 
@@ -198,14 +227,14 @@ shopping_items (id, userId FK, recipeId FK, name, quantity, unit,
 **Dependencies:** Datenbank-Setup (1.1)
 
 **Tasks:**
-- [ ] User-Entity mit email (unique), passwordHash, timestamps
-- [ ] UserRepository mit findByEmail()
-- [ ] JwtTokenProvider: Token generieren/validieren (HS256, 24h Expiry)
-- [ ] JwtAuthenticationFilter: Bearer Token extrahieren, SecurityContext setzen
-- [ ] SecurityConfig: Stateless Session, JWT Filter Chain, CORS
-- [ ] AuthService: register() + login() mit BCrypt
-- [ ] AuthController: POST /api/auth/register, POST /api/auth/login
-- [ ] Alle Endpoints brauchen JWT (außer /api/auth/*)
+- [x] User-Entity mit email (unique), passwordHash, timestamps
+- [x] UserRepository mit findByEmail()
+- [x] JwtTokenProvider: Token generieren/validieren (HS256, 24h Expiry)
+- [x] JwtAuthenticationFilter: Bearer Token extrahieren, SecurityContext setzen (Principal = `AuthenticatedUser(userId, email)`)
+- [x] SecurityConfig: Stateless Session, JWT Filter Chain, CORS
+- [x] AuthService: register() + login() mit BCrypt
+- [x] AuthController: POST /api/auth/register, POST /api/auth/login
+- [x] Alle Endpoints brauchen JWT (außer /api/auth/*)
 
 **Endpoints:**
 ```
@@ -225,11 +254,11 @@ POST   /api/auth/login        → 200 + {email, token}
 **Dependencies:** Auth-Setup (1.2)
 
 **Tasks:**
-- [ ] pom.xml: spring-data-jpa, spring-security, postgresql, flyway, jjwt
-- [ ] application.properties: Datasource, JPA, Flyway, JWT, Server
-- [ ] application-dev.properties für Lokales Development
-- [ ] Spring Boot startet ohne Fehler
-- [ ] Flyway-Migrationen laufen automatisch
+- [x] pom.xml: spring-data-jpa, spring-security, postgresql, **spring-boot-starter-flyway**, jjwt, Lombok (`<proc>full</proc>`)
+- [x] application.properties: Datasource, JPA, Flyway, JWT, Server
+- [x] application-dev.properties für Lokales Development
+- [x] Spring Boot startet ohne Fehler
+- [x] Flyway-Migrationen laufen automatisch
 
 **Konfiguration:**
 ```properties
@@ -248,19 +277,17 @@ openrouter.api.key=${OPENROUTER_API_KEY}
 **Dateien:**
 - `backend/src/main/java/.../config/RestClientConfig.java`
 - `backend/src/main/java/.../service/OpenRouterIntegrationService.java`
-- `backend/src/main/java/.../openrouter/OpenRouterClient.java`
-- `backend/src/main/java/.../openrouter/OpenRouterRequest.java`
-- `backend/src/main/java/.../openrouter/OpenRouterResponse.java`
 
 **Dependencies:** Konfiguration (1.3)
 
 **Tasks:**
-- [ ] RestClient Bean für OpenRouter (30s Timeout)
-- [ ] OpenRouterClient: HTTP-Wrapper für API-Calls
-- [ ] Fehlerbehandlung: 429 (Retry 3x mit Backoff), 401, 503
-- [ ] Prompt-Building für Rezeptgenerierung
-- [ ] JSON-Response zu Recipe-Entity Parsing
-- [ ] Validierung: Alle Felder vorhanden, Mengen numerisch
+- [x] RestClient Bean für OpenRouter (30s Timeout, `JdkClientHttpRequestFactory`)
+- [x] HTTP-Aufruf direkt im Service via RestClient (kein separates openrouter-Package nötig)
+- [x] Fehlerbehandlung: 429 (Retry 3x mit Backoff), Timeout → 503
+- [x] Prompt-Building für Rezeptgenerierung (deutscher System-Prompt, veganes JSON-Schema)
+- [x] JSON-Response zu Recipe-Entity Parsing (Jackson 3, Markdown-Fences werden entfernt)
+- [x] Validierung: name/ingredients/steps müssen vorhanden sein
+- [ ] End-to-End-Test mit echtem OPENROUTER_API_KEY
 
 **Retry-Logic:**
 ```
@@ -286,19 +313,18 @@ Nach 3x Fehler → OpenRouterUnavailableException
 **Dependencies:** OpenRouter-Integration (1.4), Auth-Setup (1.2)
 
 **Tasks:**
-- [ ] Recipe-Entity: name, description, ingredients[], steps[], userId FK, tags, rating, sourceMetadata
-- [ ] RecipeIngredient & CookingStep als @Embeddable oder @Entity mit Cascade Delete
-- [ ] RecipeRepository: findByUserId(), findByUserIdAndNameLike(), findByUserIdAndTagsContaining()
-- [ ] RecipeService:
-  - `generateRecipe(userId, ingredients, prefs)` → OpenRouter → validate → save
-  - `searchRecipes(userId, query, filters)` → LIKE-Suche
-  - `getRecipe(userId, recipeId)` → Ownership-Check
-  - `updateRecipe(userId, recipeId, updates)` → nur name/description/rating editierbar
-  - `deleteRecipe(userId, recipeId)`
-  - `scaleRecipe(userId, recipeId, servings)` → DTO ohne zu speichern
-  - `rateRecipe(userId, recipeId, rating)`
-- [ ] RecipeDTO: Serialisierung ohne Entity-Details
-- [ ] RecipeController: Alle Endpoints mit @PreAuthorize("isAuthenticated()")
+- [x] Recipe-Entity: name, description, ingredients[], steps[], userId FK, tags, rating, sourceMetadata
+- [x] RecipeIngredient & CookingStep als @Embeddable (Reihenfolge via @OrderColumn)
+- [x] RecipeRepository: findByUserId(), findByUserIdAndNameContaining(), findByUserIdAndTagsContaining()
+- [x] RecipeService:
+  - [x] `generateRecipe(userId, request)` → OpenRouter → validate → save
+  - [x] `searchRecipes(userId, search, page, size)` → LIKE-Suche, paginiert
+  - [x] `getRecipe(userId, recipeId)` → Ownership-Check (fremde Rezepte → 404)
+  - [x] `createRecipe` / `updateRecipe` / `deleteRecipe` (user-scoped)
+  - [x] `rateRecipe(userId, recipeId, rating)`
+  - [x] `scaleRecipe` — bewusst client-seitig gelöst (Portion-Scaler in Detail-View), kein Backend-Endpoint. `scaleRecipe` aus `ApiService` entfernt (toter 404-Aufruf)
+- [x] DTOs als Records: `RecipeDtos` (Request/Response/Page), `AuthDtos`
+- [x] RecipeController: Alle Endpoints hinter JWT (SecurityConfig: anyRequest().authenticated())
 
 **API Endpoints:**
 ```
@@ -309,8 +335,9 @@ POST   /api/recipes                 → 201 + Recipe (manual)
 PUT    /api/recipes/{id}            → 200 + Recipe
 DELETE /api/recipes/{id}            → 204 No Content
 POST   /api/recipes/{id}/rating     → 200 + Recipe
-GET    /api/recipes/{id}/scaled?servings=4 → 200 + Recipe (scaled)
 ```
+
+> Portion-Skalierung erfolgt client-seitig in der Detail-View (kein `/scaled`-Endpoint).
 
 ---
 
@@ -323,9 +350,9 @@ GET    /api/recipes/{id}/scaled?servings=4 → 200 + Recipe (scaled)
 - etc.
 
 **Tasks:**
-- [ ] @ControllerAdvice für globale Exception-Behandlung
-- [ ] Konsistente ErrorResponse-DTOs
-- [ ] Logging: DEBUG (Flows), INFO (API-Calls), WARN (Retries), ERROR (Failures)
+- [x] @RestControllerAdvice für globale Exception-Behandlung (deutsche Fehlermeldungen)
+- [x] Konsistente ErrorResponse-DTOs (status, message, timestamp)
+- [x] Logging-Level konfiguriert (root=INFO, com.philipphofmann=DEBUG)
 - [ ] Keine sensitiven Daten in Logs (API Keys maskieren)
 
 ---
@@ -340,11 +367,15 @@ GET    /api/recipes/{id}/scaled?servings=4 → 200 + Recipe (scaled)
 - `frontend/src/app/app.config.ts`
 
 **Tasks:**
-- [ ] Material Design 3 + CDK in package.json
-- [ ] theme.scss: CSS Variables, Breakpoints (480px, 768px, 1200px)
-- [ ] Routing: '', 'auth/login', 'auth/register', 'recipes/*'
-- [ ] Root-Layout mit Header, Router-Outlet, Footer
+- [x] Material Design 3 + CDK in package.json (Prebuilt-Theme `azure-blue`, Roboto + Material Icons in index.html)
+- [x] theme.scss: CSS Variables, Breakpoints (480px, 768px, 1200px); globale Variablen zusätzlich in styles.css
+- [x] Routing: '', 'auth/login', 'auth/register', 'recipes/*' (lazy-loaded, AuthGuard)
+- [x] Root-Layout mit Router-Outlet; Header wird pro Seite eingebunden
+- [x] Dev-Proxy: proxy.conf.json (`/api` → localhost:8080)
 - [ ] Dark Glassmorphism Hintergrund
+- [ ] Footer-Komponente
+
+> Konvention: Jede Komponente besteht aus getrennten `.ts` + `.html` + `.scss` Dateien (templateUrl/styleUrl).
 
 **Breakpoints:**
 ```scss
@@ -366,19 +397,19 @@ $bp-desktop: 1200px;
 - `frontend/src/app/core/services/auth.service.ts`
 - `frontend/src/app/core/guards/auth.guard.ts`
 - `frontend/src/app/core/interceptors/auth.interceptor.ts`
-- `frontend/src/app/features/auth/login/login.component.ts`
-- `frontend/src/app/features/auth/register/register.component.ts`
+- `frontend/src/app/features/auth/pages/login/login.component.{ts,html,scss}`
+- `frontend/src/app/features/auth/pages/register/register.component.{ts,html,scss}`
 
 **Tasks:**
-- [ ] auth.model.ts: User, LoginRequest, RegisterRequest, AuthResponse
-- [ ] auth.service.ts: login(), register(), logout(), isAuthenticated$, currentUser$
-- [ ] JWT in localStorage speichern
-- [ ] auth.interceptor.ts: Authorization: Bearer <token> auf alle Requests
+- [x] auth.model.ts: User, LoginRequest, RegisterRequest, AuthResponse
+- [x] auth.service.ts: login(), register(), logout(), isAuthenticated$, currentUser$
+- [x] JWT in localStorage speichern
+- [x] auth.interceptor.ts: Authorization: Bearer <token> auf alle Requests (klassenbasiert, via `withInterceptorsFromDi()` registriert!)
 - [ ] auth.interceptor.ts: 401 → logout() + redirect /auth/login
-- [ ] auth.guard.ts: canActivateFn für Route-Protection
-- [ ] LoginComponent: Form + Submit → navigate /recipes/library
-- [ ] RegisterComponent: Form + Validierung → auto-login
-- [ ] Material Forms & Validation
+- [x] auth.guard.ts: Route-Protection mit Redirect zu /auth/login
+- [x] LoginComponent: Form + Submit → navigate Dashboard
+- [x] RegisterComponent: Form + Passwort-Bestätigung → auto-login
+- [x] Material Forms & Validation (deutsche Fehlermeldungen)
 
 ---
 
@@ -390,15 +421,12 @@ $bp-desktop: 1200px;
 - `frontend/src/app/core/services/recipe.service.ts`
 
 **Tasks:**
-- [ ] recipe.model.ts: Recipe, RecipeIngredient, CookingStep, SearchFilters, PageResponse Interfaces
-- [ ] api.service.ts: HttpClient wrapper für alle Recipe-Endpoints
-- [ ] recipe.service.ts: Signal-basierte State Management
-  - recipeList$ (readonly Signal)
-  - selectedRecipe$ (readonly Signal)
-  - loading$ (readonly Signal)
-  - error$ (readonly Signal)
-- [ ] Methoden: loadRecipes(), selectRecipe(), generateRecipe(), deleteRecipe()
-- [ ] HTTP-Fehlerbehandlung
+- [x] recipe.model.ts: Recipe, RecipeIngredient, CookingStep, SearchFilters, PageResponse Interfaces
+- [x] api.service.ts: HttpClient wrapper für alle Recipe-Endpoints
+- [x] recipe.service.ts: State Management via RxJS BehaviorSubjects (statt Signals — Umstellung optional)
+  - recipes$, selectedRecipe$, loading$, error$
+- [x] Methoden: loadRecipes(), selectRecipe(), generateRecipe(), deleteRecipe(), updateRecipe()
+- [x] HTTP-Fehlerbehandlung mit deutschen Meldungen ("Läuft das Backend?")
 
 ---
 
@@ -411,12 +439,12 @@ $bp-desktop: 1200px;
 - `frontend/src/app/features/recipe-generator/generator-result.component.ts`
 
 **Tasks:**
-- [ ] Generator-Form: Zutaten (Array mit Add/Remove), Präferenzen (Küche, Zeit, Portionen)
-- [ ] Submit → ApiService.generateRecipe() → Loading Spinner
-- [ ] Fehlerbehandlung: Toast mit User-freundliche Meldung
-- [ ] Ergebnis-Komponente: vollständiges Rezept anzeigen
-- [ ] Buttons: Speichern (POST /api/recipes), Verwerfen, Neu generieren
-- [ ] Material Layout, responsive Design
+- [x] Generator-Form: Zutaten (Chips mit Add/Remove), Präferenzen (Küche, Zeit, Portionen)
+- [x] Submit → RecipeService.generateRecipe() → Loading Spinner
+- [x] Fehlerbehandlung: Inline-Fehlermeldung aus error$
+- [x] Ergebnis: navigiert direkt zur Detail-View des gespeicherten Rezepts (Backend speichert beim Generieren)
+- [ ] Optional: separater Ergebnis-Schritt mit Verwerfen/Neu-generieren vor dem Speichern
+- [x] Material Layout, responsive Design
 
 ---
 
@@ -428,16 +456,20 @@ $bp-desktop: 1200px;
 - `frontend/src/app/features/recipe-detail/detail.component.ts`
 
 **Tasks:**
-- [ ] Library: Such-Input (debounced 300ms) + Filter-Sidebar
-- [ ] Recipe-Liste: Paginated Cards (Karten-Grid)
-- [ ] Card: Name, Tags, Rating, Prep-Time, Kcal
-- [ ] Click → navigate /recipes/{id}
-- [ ] Detail-View: Vollständiges Rezept
-  - Name (editable), Description, Ingredients (Tabelle), Steps (nummeriert), Nährwerte
-  - Portion-Scaler (live update, no API call)
-  - Buttons: Edit, Delete (Confirm), Rate (Stars), Cook Mode (Phase 2)
+- [x] Library: Such-Input (debounced 300ms)
+- [ ] Filter-Sidebar (Tags)
+- [x] Recipe-Liste: Karten-Grid (auto-fill, min 280px)
+- [ ] Pagination-UI (Backend liefert bereits Page-Response)
+- [x] Card: Name, Tags, Rating, Zeit, Kcal
+- [x] Click → navigate /recipes/{id}
+- [x] Leer-/Fehlerzustände: "Noch keine Rezepte vorhanden" + CTA, Fehlerbanner, "Keine Treffer zu ‚…'"
+- [x] Detail-View: Beschreibung, Zutaten (Liste), Schritte (nummeriert), Kcal (als Schätzung markiert)
+  - [x] Portion-Scaler (live update, kein API-Call)
+  - [x] Delete (Confirm), Rate (Stars)
+  - [ ] Name/Beschreibung inline editieren
+  - [ ] Cook-Mode-Link (Phase 2)
 - [ ] Source-Info anzeigen (generiert von KI, Modellname)
-- [ ] Responsive: Mobile (1 col), Tablet (2 cols), Desktop (3 cols)
+- [x] Responsive Karten-Grid
 
 ---
 
@@ -451,11 +483,11 @@ $bp-desktop: 1200px;
 - `frontend/src/app/shared/components/loading-spinner/loading-spinner.component.ts`
 
 **Tasks:**
-- [ ] Header: Navigation (Dashboard, Generator, Library), User-Dropdown (Email + Logout)
+- [x] Header: Navigation (Dashboard, Generator, Library), User-Dropdown (Email + Logout)
 - [ ] Footer: Copyright, Links (optional)
-- [ ] Recipe-Card: Reusable Komponente (Input: Recipe, Output: Click)
-- [ ] Error-Banner: Global Error Toast (subscribed to error$ service)
-- [ ] Loading-Spinner: Material MatProgressSpinner
+- [x] Recipe-Card: Reusable Komponente (Input: Recipe, navigiert bei Click)
+- [ ] Error-Banner als eigene Shared-Komponente (aktuell inline in Dashboard/Library)
+- [ ] Loading-Spinner als eigene Shared-Komponente (aktuell inline MatProgressSpinner)
 
 ---
 
@@ -470,12 +502,12 @@ $bp-desktop: 1200px;
 - `README.md`
 
 **Tasks:**
-- [ ] docker-compose.yml: PostgreSQL + Backend + Frontend
-- [ ] Backend Dockerfile: Multi-stage Maven Build → WAR → Tomcat
-- [ ] Frontend Dockerfile: Multi-stage Node Build → Nginx
-- [ ] nginx.conf: SPA Routing + /api Reverse Proxy zu Backend
-- [ ] .env.example: OPENROUTER_API_KEY, DB_PASSWORD
-- [ ] README.md: Setup-Anleitung, Local Dev, Docker Compose
+- [x] docker-compose.yml: PostgreSQL 17 (Volume, Healthcheck) — Backend-/Frontend-Services folgen
+- [x] Backend Dockerfile: Multi-stage Maven Build → ausführbares WAR (`java -jar`)
+- [x] Frontend Dockerfile: Multi-stage Node Build → Nginx
+- [x] nginx.conf: SPA Routing + /api Reverse Proxy zu Backend
+- [x] .env.example: OPENROUTER_API_KEY, DB_PASSWORD, JWT_SECRET
+- [x] README.md: Setup-Anleitung, Local Dev, Docker Compose
 
 ---
 
@@ -484,14 +516,16 @@ $bp-desktop: 1200px;
 **Phase 1 Abnahmekriterien:**
 
 **Backend:**
-- [ ] Unit Tests: ≥40% Coverage (Services, Repositories)
-- [ ] Integration Tests: JPA Entities, Controller (MockMvc)
-- [ ] Flyway-Migrationen laufen auf Fresh PostgreSQL
-- [ ] Error Handling: 401, 404, 503, 400
+- [x] Unit Tests: AuthService, RecipeService (Services)
+- [x] Integration Tests: Repository-Suche (H2, @SpringBootTest)
+- [ ] Unit Tests: ≥40% Coverage (Rest der Klassen)
+- [ ] Integration Tests: Controller (MockMvc)
+- [x] Flyway-Migrationen laufen auf Fresh PostgreSQL
+- [x] Error Handling: 401, 404, 503, 400 (per Smoke-Test verifiziert)
 
 **Frontend:**
-- [ ] TypeScript Compilation: `npm run build` fehlerfrei
-- [ ] Auth Flow: Register → Login → Protected Routes
+- [x] TypeScript Compilation: `npm run build` fehlerfrei
+- [ ] Auth Flow im Browser: Register → Login → Protected Routes (API-seitig bereits verifiziert)
 - [ ] Responsive: 480px, 768px, 1200px getestet
 
 **E2E User Story (muss komplett funktionieren):**
@@ -660,27 +694,26 @@ frontend/src/app/app.config.ts
 
 #### Auth Features
 ```
-frontend/src/app/features/auth/login/login.component.ts
-frontend/src/app/features/auth/register/register.component.ts
+frontend/src/app/features/auth/pages/login/login.component.{ts,html,scss}
+frontend/src/app/features/auth/pages/register/register.component.{ts,html,scss}
 ```
 
 #### Recipe Features
 ```
-frontend/src/app/features/recipe-generator/generator.component.ts
-frontend/src/app/features/recipe-generator/generator-result.component.ts
-frontend/src/app/features/recipe-library/library.component.ts
-frontend/src/app/features/recipe-list/recipe-list.component.ts
-frontend/src/app/features/recipe-detail/detail.component.ts
+frontend/src/app/features/dashboard/dashboard.component.{ts,html,scss}
+frontend/src/app/features/recipe-generator/pages/generator/generator.component.{ts,html,scss}
+frontend/src/app/features/recipe-library/pages/library/library.component.{ts,html,scss}
+frontend/src/app/features/recipe-detail/pages/detail/detail.component.{ts,html,scss}
 ```
 
 #### Shared & Layout
 ```
-frontend/src/app/app.component.ts
+frontend/src/app/app.component.{ts,html,scss}
 frontend/src/shared/styles/theme.scss
-frontend/src/shared/components/header/header.component.ts
-frontend/src/shared/components/recipe-card/recipe-card.component.ts
-frontend/src/shared/components/error-banner/error-banner.component.ts
-frontend/src/shared/components/loading-spinner/loading-spinner.component.ts
+frontend/src/shared/components/header/header.component.{ts,html,scss}
+frontend/src/shared/components/recipe-card/recipe-card.component.{ts,html,scss}
+frontend/src/shared/components/error-banner/         (offen)
+frontend/src/shared/components/loading-spinner/      (offen)
 ```
 
 ### Infrastructure

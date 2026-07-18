@@ -1,0 +1,45 @@
+<app-header></app-header>
+<div class="library">
+  <h1>Rezept-Bibliothek</h1>
+
+  <mat-form-field appearance="outline" class="search-field">
+    <mat-label>Suchen</mat-label>
+    <input matInput [ngModel]="searchTerm" (ngModelChange)="onSearchChange($event)"
+           placeholder="Rezeptname...">
+    <mat-icon matSuffix>search</mat-icon>
+  </mat-form-field>
+
+  @if (recipeService.loading$ | async) {
+    <div class="loading">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
+  }
+
+  @if (recipeService.error$ | async; as error) {
+    <div class="error-banner">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ error }}</span>
+    </div>
+  }
+
+  @if (recipeService.recipes$ | async; as recipes) {
+    @if (recipes.length > 0) {
+      <div class="recipe-grid">
+        @for (recipe of recipes; track recipe.id) {
+          <app-recipe-card [recipe]="recipe"></app-recipe-card>
+        }
+      </div>
+    } @else if (!(recipeService.loading$ | async) && !(recipeService.error$ | async)) {
+      <div class="empty">
+        @if (searchTerm) {
+          <mat-icon class="empty-icon">search_off</mat-icon>
+          <p>Keine Rezepte zu „{{ searchTerm }}" gefunden.</p>
+        } @else {
+          <mat-icon class="empty-icon">menu_book</mat-icon>
+          <p>Es sind noch keine Rezepte vorhanden.</p>
+          <a mat-raised-button color="primary" routerLink="/recipes/generate">Erstes Rezept generieren</a>
+        }
+      </div>
+    }
+  }
+</div>

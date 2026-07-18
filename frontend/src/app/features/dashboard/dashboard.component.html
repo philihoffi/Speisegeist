@@ -1,0 +1,38 @@
+<app-header></app-header>
+<div class="dashboard">
+  <section class="hero">
+    <h1>Was kochen wir heute?</h1>
+    <div class="actions">
+      <a mat-raised-button color="primary" routerLink="/recipes/generate">
+        <mat-icon>auto_awesome</mat-icon>
+        Rezept generieren
+      </a>
+      <a mat-stroked-button routerLink="/recipes/library">
+        <mat-icon>menu_book</mat-icon>
+        Bibliothek durchsuchen
+      </a>
+    </div>
+  </section>
+
+  @if (recipeService.error$ | async; as error) {
+    <div class="error-banner">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ error }}</span>
+    </div>
+  }
+
+  @if (recipeService.recipes$ | async; as recipes) {
+    <section class="recent">
+      @if (recipes.length > 0) {
+        <h2>Neueste Rezepte</h2>
+        <div class="recipe-grid">
+          @for (recipe of recipes; track recipe.id) {
+            <app-recipe-card [recipe]="recipe"></app-recipe-card>
+          }
+        </div>
+      } @else if (!(recipeService.loading$ | async) && !(recipeService.error$ | async)) {
+        <p class="empty">Es sind noch keine Rezepte vorhanden — generiere dein erstes Rezept!</p>
+      }
+    </section>
+  }
+</div>

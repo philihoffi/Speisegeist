@@ -1,0 +1,94 @@
+<app-header></app-header>
+@if (recipe) {
+  <div class="detail">
+    <div class="title-row">
+      <h1>{{ recipe.name }}</h1>
+      <div class="actions">
+        <button mat-icon-button (click)="deleteRecipe()" aria-label="Löschen">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    @if (recipe.description) {
+      <p class="description">{{ recipe.description }}</p>
+    }
+
+    <div class="meta">
+      @if (recipe.preparationTimeMinutes) {
+        <span>Vorbereitung: {{ recipe.preparationTimeMinutes }} Min.</span>
+      }
+      @if (recipe.cookTimeMinutes) {
+        <span>Kochzeit: {{ recipe.cookTimeMinutes }} Min.</span>
+      }
+      @if (recipe.estimatedKcal) {
+        <span>~{{ recipe.estimatedKcal }} kcal (Schätzung)</span>
+      }
+    </div>
+
+    <div class="rating">
+      @for (star of [1,2,3,4,5]; track star) {
+        <button mat-icon-button (click)="rate(star)">
+          <mat-icon>{{ (recipe.rating || 0) >= star ? 'star' : 'star_border' }}</mat-icon>
+        </button>
+      }
+    </div>
+
+    @if (recipe.tags.length > 0) {
+      <mat-chip-set>
+        @for (tag of recipe.tags; track tag) {
+          <mat-chip>{{ tag }}</mat-chip>
+        }
+      </mat-chip-set>
+    }
+
+    <div class="columns">
+      <mat-card class="ingredients-card">
+        <mat-card-header>
+          <mat-card-title>Zutaten</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <mat-form-field appearance="outline" class="servings-field">
+            <mat-label>Portionen</mat-label>
+            <input matInput type="number" [(ngModel)]="displayServings" min="1" max="20">
+          </mat-form-field>
+          <mat-list>
+            @for (ing of recipe.ingredients; track $index) {
+              <mat-list-item>
+                @if (ing.quantity) {
+                  <span class="quantity">{{ scaledQuantity(ing.quantity) | number:'1.0-1' }} {{ ing.unit }}</span>
+                }
+                {{ ing.name }}
+                @if (ing.notes) {
+                  <span class="notes"> ({{ ing.notes }})</span>
+                }
+              </mat-list-item>
+            }
+          </mat-list>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="steps-card">
+        <mat-card-header>
+          <mat-card-title>Zubereitung</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <ol class="steps">
+            @for (step of recipe.steps; track $index) {
+              <li>
+                {{ step.instruction }}
+                @if (step.durationMinutes) {
+                  <span class="duration"> ({{ step.durationMinutes }} Min.)</span>
+                }
+              </li>
+            }
+          </ol>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+} @else {
+  <div class="loading">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+}

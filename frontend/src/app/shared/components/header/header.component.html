@@ -1,0 +1,20 @@
+<mat-toolbar color="primary">
+  <a routerLink="/" class="brand"><mat-icon>restaurant</mat-icon> Speisegeist</a>
+  <span class="spacer"></span>
+  @if (auth.isAuthenticated$ | async) {
+    <a mat-button routerLink="/recipes/generate">Generieren</a>
+    <a mat-button routerLink="/recipes/library">Bibliothek</a>
+    <button mat-icon-button [matMenuTriggerFor]="userMenu">
+      <mat-icon>account_circle</mat-icon>
+    </button>
+    <mat-menu #userMenu="matMenu">
+      @if (auth.currentUser$ | async; as user) {
+        <div class="user-email">{{ user.email }}</div>
+      }
+      <button mat-menu-item (click)="logout()">
+        <mat-icon>logout</mat-icon>
+        Abmelden
+      </button>
+    </mat-menu>
+  }
+</mat-toolbar>

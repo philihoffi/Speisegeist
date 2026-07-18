@@ -1,0 +1,23 @@
+.recipe-card {
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+  height: 100%;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.meta {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 0.9rem;
+  align-items: center;
+
+  mat-icon {
+    font-size: 1rem;
+    vertical-align: text-bottom;
+  }
+}

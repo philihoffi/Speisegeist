@@ -1,1 +1,26 @@
-/* You can add global styles to this file, and also import other style files */
+/* Global styles */
+:root {
+  --color-primary: #2E7D32;
+  --color-accent: #FF6F00;
+  --color-background: #fafafa;
+
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+  background: var(--color-background);
+}
