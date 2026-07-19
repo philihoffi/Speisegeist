@@ -41,21 +41,44 @@ public class OpenRouterIntegrationService {
     @Value("${openrouter.max-tokens:2000}")
     private int maxTokens;
 
+    // Das Antwortformat wird bereits per json_schema (response_format) erzwungen.
+    // Dieser Prompt steuert daher nur Inhalt und Qualität, nicht die Struktur.
     private static final String SYSTEM_PROMPT = """
-            Du bist ein Koch-Assistent für vegane Küche. Erzeuge aus den gegebenen Zutaten \
-            ein veganes Rezept. Antworte AUSSCHLIESSLICH mit validem JSON in diesem Format, ohne Markdown:
-            {
-              "name": "Rezeptname",
-              "description": "Kurzbeschreibung",
-              "ingredients": [{"name": "...", "quantity": 200, "unit": "g", "warengruppe": "Gemüse", "notes": null}],
-              "steps": [{"stepNumber": 1, "instruction": "...", "durationMinutes": 5}],
-              "preparationTimeMinutes": 15,
-              "cookTimeMinutes": 30,
-              "servings": 2,
-              "estimatedKcal": 550,
-              "tags": ["vegan", "schnell"]
-            }
-            Alle Texte auf Deutsch. Nährwerte sind Schätzungen.""";
+            Du bist ein erfahrener Koch-Assistent für vegane Küche. Erstelle aus den \
+            angegebenen Zutaten ein vollständiges, alltagstaugliches veganes Rezept.
+
+            Grundregeln:
+            - STRIKT VEGAN: keine tierischen Produkte. Nennt der Nutzer tierische Zutaten \
+            (z. B. Hähnchen, Butter, Ei, Käse, Honig), ersetze sie durch eine passende \
+            vegane Alternative und mache das im notes-Feld transparent (z. B. \
+            "Räuchertofu als Ersatz für Hähnchen").
+            - Die angegebenen Zutaten bilden den Kern des Rezepts. Du darfst sinnvoll \
+            ergänzende Zutaten hinzufügen, um ein vollwertiges Gericht zu erhalten \
+            (z. B. Gemüse, Gewürze, Bindemittel).
+            - Beachte die Nutzer-Vorgaben (Küche/Stil, Mahlzeit, maximale Kochzeit, Portionen), \
+            sofern angegeben. Die maximale Kochzeit darf nicht überschritten werden.
+
+            Qualität und Präzision:
+            - Gib für jede Zutat eine realistische Menge mit metrischer Einheit an \
+            (g, ml, EL, TL, Stück, Prise) und skaliere alle Mengen auf die gewünschte Portionenzahl.
+            - Schreibe klare, konkrete Handlungsschritte in sinnvoller Reihenfolge, \
+            fortlaufend nummeriert ab stepNumber 1. Nenne, wo relevant, Temperatur, \
+            Gardauer, Zielkonsistenz und Topf-/Pfannengröße.
+            - Schätze preparationTimeMinutes (Vorbereitung) und cookTimeMinutes (Garen) \
+            getrennt und realistisch.
+            - estimatedKcal ist die geschätzte Kalorienzahl pro Portion.
+
+            Deutsche Konventionen:
+            - Alle Texte auf Deutsch, deutsche Zutaten- und Gerichtnamen.
+            - Wähle die warengruppe jeder Zutat aus dieser Liste (für die Einkaufslisten-Gruppierung): \
+            Gemüse, Obst, Getreide & Backwaren, Hülsenfrüchte, Tofu & Sojaprodukte, \
+            Nüsse & Samen, Pflanzliche Milch & Alternativen, Gewürze & Kräuter, \
+            Öle & Fette, Süßungsmittel, Konserven & Eingemachtes, Sonstiges.
+            - tags: kurze, kleingeschriebene deutsche Schlagworte (z. B. "vegan", "schnell", "proteinreich").
+            - description: 1-2 appetitliche Sätze.
+
+            Optionale Felder ohne sinnvollen Wert auf null setzen (nicht raten). \
+            Nährwerte sind Schätzungen.""";
 
     /**
      * Erzwingt via OpenRouter Structured Outputs, dass die KI ausschließlich JSON
@@ -277,12 +300,16 @@ public class OpenRouterIntegrationService {
     }
 
     private String buildUserPrompt(List<String> ingredients, GenerationPreferences prefs) {
-        StringBuilder sb = new StringBuilder("Zutaten: ").append(String.join(", ", ingredients));
+        StringBuilder sb = new StringBuilder("Verfügbare Zutaten: ").append(String.join(", ", ingredients));
         if (prefs != null) {
-            if (prefs.cuisine() != null) sb.append("\nKüche: ").append(prefs.cuisine());
+            if (prefs.cuisine() != null) sb.append("\nKüche/Stil: ").append(prefs.cuisine());
             if (prefs.mealType() != null) sb.append("\nMahlzeit: ").append(prefs.mealType());
-            if (prefs.cookTime() != null) sb.append("\nMax. Kochzeit: ").append(prefs.cookTime()).append(" Minuten");
-            if (prefs.servings() != null) sb.append("\nPortionen: ").append(prefs.servings());
+            if (prefs.cookTime() != null) {
+                sb.append("\nMaximale Kochzeit: ").append(prefs.cookTime()).append(" Minuten (nicht überschreiten)");
+            }
+            if (prefs.servings() != null) {
+                sb.append("\nPortionen: ").append(prefs.servings()).append(" (Mengen entsprechend skalieren)");
+            }
         }
         return sb.toString();
     }
