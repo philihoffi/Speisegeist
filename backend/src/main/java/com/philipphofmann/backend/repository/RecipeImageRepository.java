@@ -6,6 +6,9 @@ import org.springframework.stereotype.Repository;
 
 import java.util.UUID;
 
+/**
+ * Data access for persisted recipe images.
+ */
 @Repository
 public interface RecipeImageRepository extends JpaRepository<RecipeImage, UUID> {
 }

@@ -13,6 +13,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
+/**
+ * Handles user registration and login, including password hashing, email
+ * normalization, and JWT issuance.
+ */
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -21,6 +25,13 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
 
+    /**
+     * Registers a new user, hashing the password, and returns a JWT.
+     *
+     * @param email    the desired login email
+     * @param password the raw password
+     * @return the auth response with a signed JWT
+     */
     @Transactional
     public AuthResponse register(String email, String password) {
         email = normalizeEmail(email);
@@ -38,6 +49,13 @@ public class AuthService {
         return new AuthResponse(token, user.getEmail());
     }
 
+    /**
+     * Authenticates a user and returns a JWT, updating the last-login timestamp.
+     *
+     * @param email    the login email
+     * @param password the raw password
+     * @return the auth response with a signed JWT
+     */
     @Transactional
     public AuthResponse login(String email, String password) {
         email = normalizeEmail(email);
@@ -55,6 +73,12 @@ public class AuthService {
         return new AuthResponse(token, user.getEmail());
     }
 
+    /**
+     * Normalizes an email for lookups: trims whitespace and lowercases it.
+     *
+     * @param email the raw email
+     * @return the normalized email, or {@code null} if the input was {@code null}
+     */
     private String normalizeEmail(String email) {
         return email == null ? null : email.trim().toLowerCase();
     }

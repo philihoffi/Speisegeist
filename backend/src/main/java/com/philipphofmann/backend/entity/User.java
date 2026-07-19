@@ -5,6 +5,10 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+/**
+ * Application user holding credentials and login metadata. The email is the unique
+ * login identifier and the password is stored as a BCrypt hash.
+ */
 @Entity
 @Table(name = "users")
 @Getter

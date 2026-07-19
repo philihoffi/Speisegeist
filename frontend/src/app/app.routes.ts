@@ -1,6 +1,10 @@
 import { Routes } from '@angular/router';
 import { AuthGuard } from './core/guards/auth.guard';
 
+/**
+ * Application routes. Public auth routes sit under {@code /auth}; all recipe
+ * routes are guarded by {@link AuthGuard}. Unknown paths redirect to the dashboard.
+ */
 export const routes: Routes = [
   {
     path: 'auth',

@@ -5,6 +5,11 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.*;
 
+/**
+ * A user-owned recipe: ingredients, ordered cooking steps, tags, and metadata.
+ * Generation provenance is tracked via {@link SourceType}, the provider model, and
+ * the application version that produced the recipe.
+ */
 @Entity
 @Table(name = "recipes", indexes = {
     @Index(name = "idx_user_id", columnList = "user_id"),

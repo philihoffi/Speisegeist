@@ -14,6 +14,10 @@ import { HeaderComponent } from '../../../../shared/components/header/header.com
 import { ErrorBannerComponent } from '../../../../shared/components/error-banner/error-banner.component';
 import { RecipeService } from '../../../../core/services/recipe.service';
 
+/**
+ * Recipe generator page: collects ingredients and optional preferences, then
+ * requests an AI-generated recipe and navigates to its detail page.
+ */
 @Component({
   selector: 'app-generator',
   standalone: true,
@@ -34,6 +38,7 @@ export class GeneratorComponent {
 
   constructor(public recipeService: RecipeService, private router: Router) {}
 
+  /** Adds the trimmed ingredient input to the ingredient list, ignoring duplicates. */
   addIngredient(): void {
     const value = this.ingredientInput.trim();
     if (value && !this.ingredients.includes(value)) {
@@ -42,10 +47,12 @@ export class GeneratorComponent {
     this.ingredientInput = '';
   }
 
+  /** Removes the ingredient at the given index. */
   removeIngredient(index: number): void {
     this.ingredients.splice(index, 1);
   }
 
+  /** Builds the preferences and triggers recipe generation. */
   generate(): void {
     const preferences = {
       cuisine: this.cuisine || undefined,

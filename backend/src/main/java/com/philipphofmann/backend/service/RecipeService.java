@@ -19,6 +19,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Business logic for recipes: generation, search, CRUD, and rating. Every
+ * operation is scoped to the requesting user via their id.
+ */
 @Service
 @RequiredArgsConstructor
 public class RecipeService {
@@ -30,6 +34,13 @@ public class RecipeService {
     @Value("${app.version:1.0}")
     private String appVersion;
 
+    /**
+     * Generates a new recipe for the user from the given ingredients and preferences.
+     *
+     * @param userId  the owning user's id
+     * @param request the generation request
+     * @return the persisted, generated recipe
+     */
     @Transactional
     public Recipe generateRecipe(UUID userId, RecipeGenerationRequest request) {
         Recipe recipe = recipeGeneratorService.generateRecipe(request.ingredients(), request.preferences());
@@ -38,6 +49,16 @@ public class RecipeService {
         return recipeRepository.save(recipe);
     }
 
+    /**
+     * Searches the user's recipes by text or tag and returns a page of summaries.
+     *
+     * @param userId the owning user's id
+     * @param search optional free-text search
+     * @param tag    optional tag filter
+     * @param page   zero-based page index
+     * @param size   page size
+     * @return a page of recipe summaries
+     */
     @Transactional(readOnly = true)
     public PageResponse<RecipeSummaryResponse> searchRecipes(UUID userId, String search, String tag, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
@@ -57,12 +78,26 @@ public class RecipeService {
                 result.getNumber());
     }
 
+    /**
+     * Returns a recipe by id, verifying ownership.
+     *
+     * @param userId   the owning user's id
+     * @param recipeId the recipe id
+     * @return the recipe
+     */
     @Transactional(readOnly = true)
     public Recipe getRecipe(UUID userId, UUID recipeId) {
         return recipeRepository.findByIdAndUserId(recipeId, userId)
                 .orElseThrow(() -> new RecipeNotFoundException(recipeId));
     }
 
+    /**
+     * Creates a manually entered recipe for the user.
+     *
+     * @param userId  the owning user's id
+     * @param request the recipe payload
+     * @return the persisted recipe
+     */
     @Transactional
     public Recipe createRecipe(UUID userId, RecipeRequest request) {
         Recipe recipe = Recipe.builder()
@@ -73,6 +108,14 @@ public class RecipeService {
         return recipeRepository.save(recipe);
     }
 
+    /**
+     * Updates an existing recipe owned by the user.
+     *
+     * @param userId   the owning user's id
+     * @param recipeId the recipe id
+     * @param request  the recipe payload
+     * @return the updated recipe
+     */
     @Transactional
     public Recipe updateRecipe(UUID userId, UUID recipeId, RecipeRequest request) {
         Recipe recipe = getRecipe(userId, recipeId);
@@ -80,12 +123,26 @@ public class RecipeService {
         return recipeRepository.save(recipe);
     }
 
+    /**
+     * Deletes a recipe owned by the user.
+     *
+     * @param userId   the owning user's id
+     * @param recipeId the recipe id
+     */
     @Transactional
     public void deleteRecipe(UUID userId, UUID recipeId) {
         Recipe recipe = getRecipe(userId, recipeId);
         recipeRepository.delete(recipe);
     }
 
+    /**
+     * Stores the user's star rating for a recipe.
+     *
+     * @param userId   the owning user's id
+     * @param recipeId the recipe id
+     * @param rating   the rating value
+     * @return the updated recipe
+     */
     @Transactional
     public Recipe rateRecipe(UUID userId, UUID recipeId, double rating) {
         Recipe recipe = getRecipe(userId, recipeId);
@@ -93,6 +150,14 @@ public class RecipeService {
         return recipeRepository.save(recipe);
     }
 
+    /**
+     * Applies the request fields to the given recipe. When {@code full} is true the
+     * call represents a create and missing fields fall back to sensible defaults.
+     *
+     * @param recipe  the recipe to update
+     * @param request the incoming payload
+     * @param full    {@code true} for create (applying defaults), {@code false} for update
+     */
     private void applyRequest(Recipe recipe, RecipeRequest request, boolean full) {
         if (request.name() != null) recipe.setName(request.name());
         if (request.description() != null) recipe.setDescription(request.description());
@@ -115,7 +180,12 @@ public class RecipeService {
         }
     }
 
-    /** Mappt eine DTO-Zutat auf eine {@link RecipeIngredient} und verknüpft sie mit dem Katalog. */
+    /**
+     * Maps a DTO ingredient onto a {@link RecipeIngredient} and links it to the catalog.
+     *
+     * @param dto the DTO ingredient
+     * @return the persisted ingredient association
+     */
     private RecipeIngredient toRecipeIngredient(IngredientDto dto) {
         return RecipeIngredient.builder()
                 .ingredient(ingredientService.resolve(dto.name(), dto.warengruppe()))

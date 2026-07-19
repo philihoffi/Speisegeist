@@ -9,6 +9,9 @@ import { RecipeCardComponent } from '../../../../shared/components/recipe-card/r
 import { ErrorBannerComponent } from '../../../../shared/components/error-banner/error-banner.component';
 import { RecipeService } from '../../../../core/services/recipe.service';
 
+/**
+ * Dashboard (home) page: loads a preview of the user's recipes on init.
+ */
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -19,6 +22,7 @@ import { RecipeService } from '../../../../core/services/recipe.service';
 export class DashboardComponent implements OnInit {
   constructor(public recipeService: RecipeService) {}
 
+  /** Loads the first page of recipes when the component initializes. */
   ngOnInit(): void {
     this.recipeService.loadRecipes({ page: 0, size: 6 });
   }

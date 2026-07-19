@@ -5,10 +5,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { ApiService } from '../../../core/services/api.service';
 
 /**
- * Zeigt das Rezeptbild aus dem Backend an. Lädt die Bytes per Blob-Request (der
- * Auth-Interceptor hängt den JWT an), erzeugt daraus eine Object-URL und räumt diese
- * beim Wechsel/Zerstören wieder auf. Zeigt einen Ladezustand und – bei Fehler oder bis
- * das Bild generiert ist – einen Ghost-Platzhalter.
+ * Displays a recipe image fetched from the backend. Loads the bytes via a blob
+ * request (the auth interceptor attaches the JWT), creates an object URL, and
+ * revokes it again on change/destroy. Shows a loading state and, until the image
+ * is ready or on error, a placeholder.
  */
 @Component({
   selector: 'app-recipe-image',
@@ -21,7 +21,7 @@ export class RecipeImageComponent implements OnChanges, OnDestroy {
   @Input({ required: true }) recipeId!: string;
   @Input() alt = '';
 
-  // Zoneless: In Subscribe-Callbacks gesetzter Zustand muss ein Signal sein.
+  // Zoneless: state set inside subscribe callbacks must be a signal.
   imageUrl = signal<string | null>(null);
   loading = signal(false);
   failed = signal(false);

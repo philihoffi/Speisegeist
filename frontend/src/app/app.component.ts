@@ -3,6 +3,9 @@ import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { FooterComponent } from './shared/components/footer/footer.component';
 
+/**
+ * Root application component hosting the router outlet and footer.
+ */
 @Component({
   selector: 'app-root',
   standalone: true,

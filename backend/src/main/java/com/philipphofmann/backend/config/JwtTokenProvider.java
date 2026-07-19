@@ -12,6 +12,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.UUID;
 
+/**
+ * Creates and verifies JWT access tokens. Tokens carry the user's email as the
+ * subject and the user id as a custom {@code userId} claim.
+ */
 @Component
 public class JwtTokenProvider {
 
@@ -25,6 +29,13 @@ public class JwtTokenProvider {
         this.expirationSeconds = expirationSeconds;
     }
 
+    /**
+     * Creates a signed JWT for the given user, valid for the configured lifetime.
+     *
+     * @param userId the user id stored in the {@code userId} claim
+     * @param email  the user email used as the token subject
+     * @return the compact, signed JWT string
+     */
     public String generateToken(UUID userId, String email) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + expirationSeconds * 1000);
@@ -37,6 +48,12 @@ public class JwtTokenProvider {
                 .compact();
     }
 
+    /**
+     * Checks whether the token's signature is valid and it has not expired.
+     *
+     * @param token the JWT string
+     * @return {@code true} if the token is valid
+     */
     public boolean validateToken(String token) {
         try {
             parseClaims(token);
@@ -46,14 +63,32 @@ public class JwtTokenProvider {
         }
     }
 
+    /**
+     * Returns the email (subject) stored in the token.
+     *
+     * @param token the JWT string
+     * @return the user email
+     */
     public String getEmail(String token) {
         return parseClaims(token).getSubject();
     }
 
+    /**
+     * Returns the user id stored in the {@code userId} claim.
+     *
+     * @param token the JWT string
+     * @return the user id
+     */
     public UUID getUserId(String token) {
         return UUID.fromString(parseClaims(token).get("userId", String.class));
     }
 
+    /**
+     * Verifies the signature and decodes the token payload.
+     *
+     * @param token the JWT string
+     * @return the validated token claims
+     */
     private Claims parseClaims(String token) {
         return Jwts.parser()
                 .verifyWith(key)

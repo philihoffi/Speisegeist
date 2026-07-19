@@ -11,9 +11,21 @@ import org.springframework.web.client.RestClient;
 import java.net.http.HttpClient;
 import java.time.Duration;
 
+/**
+ * Provides the {@link RestClient} used to talk to the OpenRouter HTTP API.
+ */
 @Configuration
 public class RestClientConfig {
 
+    /**
+     * Builds a pre-configured {@link RestClient} for OpenRouter. Fails fast when no
+     * real API key is configured (empty or the documented placeholder).
+     *
+     * @param baseUrl         the OpenRouter base URL
+     * @param apiKey          the OpenRouter API key (sent as a bearer token)
+     * @param timeoutSeconds  read timeout in seconds for generation calls
+     * @return the configured {@link RestClient}
+     */
     @Bean
     public RestClient openRouterRestClient(
             @Value("${openrouter.api.base-url}") String baseUrl,

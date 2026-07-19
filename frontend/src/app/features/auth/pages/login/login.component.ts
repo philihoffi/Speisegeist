@@ -10,6 +10,10 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { AuthService } from '../../../../core/services/auth.service';
 
+/**
+ * Login page: lets an existing user authenticate and redirects to the
+ * dashboard on success.
+ */
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -22,7 +26,7 @@ import { AuthService } from '../../../../core/services/auth.service';
 })
 export class LoginComponent {
   form: FormGroup;
-  // Zoneless: in Subscribe-Callbacks gesetzter Zustand muss ein Signal sein
+  // Zoneless: state set inside subscribe callbacks must be a signal so the view updates.
   loading = signal(false);
   error = signal<string | null>(null);
 
@@ -33,6 +37,7 @@ export class LoginComponent {
     });
   }
 
+  /** Submits the login form, navigating to the dashboard on success. */
   onSubmit(): void {
     if (this.form.invalid) return;
     this.loading.set(true);

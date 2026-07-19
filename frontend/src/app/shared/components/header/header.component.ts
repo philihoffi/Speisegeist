@@ -7,6 +7,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { AuthService } from '../../../core/services/auth.service';
 
+/**
+ * Application header with navigation and a logout action.
+ */
 @Component({
   selector: 'app-header',
   standalone: true,
@@ -17,6 +20,7 @@ import { AuthService } from '../../../core/services/auth.service';
 export class HeaderComponent {
   constructor(public auth: AuthService, private router: Router) {}
 
+  /** Logs the user out and redirects to the login page. */
   logout(): void {
     this.auth.logout();
     this.router.navigate(['/auth/login']);

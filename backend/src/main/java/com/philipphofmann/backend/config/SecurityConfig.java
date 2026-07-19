@@ -20,6 +20,11 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Application security configuration: stateless JWT authentication, CORS, and
+ * endpoint authorization. All requests except those under {@code /auth/**}
+ * require a valid bearer token.
+ */
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
@@ -30,6 +35,13 @@ public class SecurityConfig {
     @Value("${spring.web.cors.allowed-origins}")
     private List<String> allowedOrigins;
 
+    /**
+     * Builds the security filter chain: disables CSRF, enables CORS, enforces a
+     * stateless session policy, and rejects unauthenticated requests with 401.
+     *
+     * @param http the {@link HttpSecurity} builder
+     * @return the configured filter chain
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -46,6 +58,11 @@ public class SecurityConfig {
         return http.build();
     }
 
+    /**
+     * Defines the CORS configuration applied to every request.
+     *
+     * @return the CORS configuration source
+     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
@@ -59,6 +76,11 @@ public class SecurityConfig {
         return source;
     }
 
+    /**
+     * Defines the password encoder used for hashing user passwords.
+     *
+     * @return a BCrypt password encoder
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

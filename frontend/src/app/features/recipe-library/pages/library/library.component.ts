@@ -15,6 +15,10 @@ import { ErrorBannerComponent } from '../../../../shared/components/error-banner
 import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
 import { RecipeService } from '../../../../core/services/recipe.service';
 
+/**
+ * Recipe library page: searchable, tag-filterable, paginated list of the user's
+ * recipes. Tags are derived from the currently loaded recipes.
+ */
 @Component({
   selector: 'app-library',
   standalone: true,
@@ -52,7 +56,7 @@ export class LibraryComponent implements OnInit, OnDestroy {
     );
     this.subscriptions.add(
       this.recipeService.recipes$.subscribe(recipes => {
-        // Tags aus den geladenen Rezepten sammeln; gewählten Tag nicht verlieren
+        // Collect tags from the loaded recipes, keeping the selected tag if present.
         const tags = new Set<string>(this.selectedTag ? [this.selectedTag] : []);
         recipes.forEach(r => r.tags.forEach(t => tags.add(t)));
         this.availableTags = [...tags].sort((a, b) => a.localeCompare(b, 'de'));
@@ -60,27 +64,32 @@ export class LibraryComponent implements OnInit, OnDestroy {
     );
   }
 
+  /** Cleans up subscriptions when the component is destroyed. */
   ngOnDestroy(): void {
     this.subscriptions.unsubscribe();
   }
 
+  /** Pushes the search term into the debounced search stream. */
   onSearchChange(term: string): void {
     this.searchTerm = term;
     this.search$.next(term);
   }
 
+  /** Changes the active tag filter and reloads. */
   onTagChange(tag: string | undefined): void {
     this.selectedTag = tag || null;
     this.pageIndex = 0;
     this.load();
   }
 
+  /** Reacts to pagination changes and reloads the page. */
   onPageChange(event: PageEvent): void {
     this.pageIndex = event.pageIndex;
     this.pageSize = event.pageSize;
     this.load();
   }
 
+  /** Loads recipes using the current search, tag, and pagination state. */
   private load(): void {
     this.recipeService.loadRecipes({
       search: this.searchTerm || undefined,

@@ -7,9 +7,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Pflegt den globalen {@link Ingredient}-Katalog. Zentrale Aufgabe ist
- * {@link #resolve(String, String)}: eine Zutat anhand ihres Namens finden oder
- * neu anlegen, sodass der Katalog über die Zeit alle vorkommenden Zutaten sammelt.
+ * Maintains the global {@link Ingredient} catalog. Its main responsibility is
+ * {@link #resolve(String, String)}: find an ingredient by name or create it, so
+ * the catalog gradually collects every ingredient that appears in recipes.
  */
 @Service
 @RequiredArgsConstructor
@@ -18,13 +18,13 @@ public class IngredientService {
     private final IngredientRepository ingredientRepository;
 
     /**
-     * Liefert die Katalog-Zutat zum Namen (case-insensitive) oder legt sie neu an.
-     * Eine bislang fehlende Warengruppe wird nachgetragen, eine bestehende bleibt
-     * unangetastet. Läuft in der Transaktion des Aufrufers mit.
+     * Returns the catalog ingredient for the name (case-insensitive) or creates it.
+     * A missing warengruppe is backfilled, but an existing one is left untouched.
+     * Runs within the caller's transaction.
      *
-     * @param rawName     Zutatenname (wird getrimmt)
-     * @param warengruppe Warengruppe für die Einkaufslisten-Gruppierung, optional
-     * @return die persistente (managed) Zutat
+     * @param rawName        the ingredient name (will be trimmed)
+     * @param warengruppe    optional warengruppe used for shopping-list grouping
+     * @return the persisted (managed) ingredient
      */
     @Transactional
     public Ingredient resolve(String rawName, String warengruppe) {

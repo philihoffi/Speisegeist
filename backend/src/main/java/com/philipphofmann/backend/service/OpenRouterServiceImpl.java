@@ -89,10 +89,9 @@ public class OpenRouterServiceImpl implements OpenRouterService {
 
         JsonNode image = data.get(0);
 
-        // OpenRouter/image-Modelle liefern entweder eine kurzlebige "url" oder
-        // direkt base64-kodiertes "b64_json" (z. B. openai/gpt-image). Beide Fälle
-        // unterstützen, damit kein Modell wegen eines nicht unterstützten Formats
-        // mit einem Fehler abbricht.
+        // OpenRouter/image models return either a short-lived "url" or directly
+        // base64-encoded "b64_json" (e.g. openai/gpt-image). Support both cases so
+        // no model fails because of an unsupported response format.
         JsonNode url = image.path("url");
         if (!url.isMissingNode() && !url.asText().isBlank()) {
             log.debug("OpenRouter Bildgenerierung: model={}, size={}, url_length={}",
@@ -111,7 +110,7 @@ public class OpenRouterServiceImpl implements OpenRouterService {
             if (bytes.length == 0) {
                 throw new RecipeGenerationException("Bild (b64_json) ist leer");
             }
-            // gpt-image liefert PNG; andere Modelle ggf. anpassen.
+            // gpt-image returns PNG; other models may require adjustments.
             log.debug("OpenRouter Bildgenerierung: model={}, size={}, b64_bytes={}",
                     imageModel, size, bytes.length);
             return new GeneratedImage(bytes, MediaType.IMAGE_PNG_VALUE);
@@ -164,9 +163,9 @@ public class OpenRouterServiceImpl implements OpenRouterService {
         body.put("max_tokens", maxTokens);
         if (responseFormat != null) {
             body.put("response_format", responseFormat);
-            // Nur Provider zulassen, die response_format/json_schema wirklich unterstützen,
-            // sonst routet OpenRouter ggf. an eine Instanz, die den Parameter ignoriert/ablehnt
-            // (Folge: finish_reason=error). Siehe openrouter.ai/docs/features/structured-outputs
+            // Only allow providers that actually support response_format/json_schema,
+            // otherwise OpenRouter may route to an instance that ignores/rejects the
+            // parameter (resulting in finish_reason=error). See openrouter.ai/docs/features/structured-outputs
             body.put("provider", Map.of("require_parameters", true));
         }
 

@@ -5,6 +5,10 @@ import { catchError } from 'rxjs/operators';
 import { AuthService } from '../services/auth.service';
 import { Router } from '@angular/router';
 
+/**
+ * Attaches the bearer JWT to outgoing requests and triggers logout plus a redirect
+ * to the login page when the backend responds with 401 (outside the auth endpoints).
+ */
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
   constructor(private authService: AuthService, private router: Router) { }

@@ -7,9 +7,12 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Data access for the global {@link Ingredient} catalog.
+ */
 @Repository
 public interface IngredientRepository extends JpaRepository<Ingredient, UUID> {
 
-    /** Findet eine Katalog-Zutat unabhängig von der Groß-/Kleinschreibung. */
+    /** Finds a catalog ingredient regardless of letter case. */
     Optional<Ingredient> findByNameIgnoreCase(String name);
 }

@@ -33,7 +33,7 @@ public interface OpenRouterService {
      */
     GeneratedImage generateImage(String prompt, String size, Integer n);
 
-    /** Das konfigurierte Modell (z. B. für Provenienz-Metadaten). */
+    /** The configured model (e.g. for provenance metadata). */
     String getModel();
 
     /** Das konfigurierte Bildgenerierungs-Modell. */

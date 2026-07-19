@@ -3,6 +3,9 @@ import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 
+/**
+ * Displays a dismissible error message passed via the {@code message} input.
+ */
 @Component({
   selector: 'app-error-banner',
   standalone: true,

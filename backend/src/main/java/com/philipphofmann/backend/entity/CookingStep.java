@@ -3,8 +3,11 @@ package com.philipphofmann.backend.entity;
 import jakarta.persistence.Embeddable;
 import lombok.*;
 
-// Step order is managed by the @OrderColumn(step_number) on Recipe.steps —
-// a stepNumber field here would clash with that column mapping.
+/**
+ * A single cooking step embedded in a {@code Recipe}. The step order is managed by
+ * the {@code @OrderColumn(step_number)} mapping on {@code Recipe.steps}, so this
+ * type intentionally holds no explicit step number field.
+ */
 @Embeddable
 @Data
 @NoArgsConstructor

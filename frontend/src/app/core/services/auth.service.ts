@@ -4,6 +4,10 @@ import { Observable, BehaviorSubject } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { AuthResponse, LoginRequest, RegisterRequest, User } from '../models/auth.model';
 
+/**
+ * Handles authentication: login, registration, token storage, and exposing the
+ * current authentication state to the UI as observables.
+ */
 @Injectable({
   providedIn: 'root'
 })
@@ -63,7 +67,7 @@ export class AuthService {
       return;
     }
     const claims = this.decodeToken(token);
-    // Token abgelaufen -> Zustand bereinigen, damit UI nicht faelschlich "eingeloggt" zeigt
+    // Expired token: clean up state so the UI does not falsely show "logged in".
     if (claims?.exp && claims.exp * 1000 < Date.now()) {
       this.logout();
       return;

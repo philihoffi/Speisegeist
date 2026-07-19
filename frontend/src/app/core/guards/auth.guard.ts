@@ -2,6 +2,10 @@ import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
+/**
+ * Route guard that allows navigation only for authenticated users,
+ * redirecting unauthenticated users to the login page.
+ */
 @Injectable({
   providedIn: 'root'
 })

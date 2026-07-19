@@ -1,6 +1,9 @@
 import { Component, Input } from '@angular/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
+/**
+ * Wrapper around the Material progress spinner with a configurable diameter.
+ */
 @Component({
   selector: 'app-loading-spinner',
   standalone: true,

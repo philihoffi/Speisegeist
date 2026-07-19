@@ -7,9 +7,8 @@ import jakarta.persistence.ManyToOne;
 import lombok.*;
 
 /**
- * Verwendung einer Zutat innerhalb eines Rezepts. Verweist per Fremdschlüssel auf
- * die globale {@link Ingredient} (Name/Warengruppe) und trägt die rezeptspezifischen
- * Angaben Menge, Einheit und Notiz.
+ * Usage of an ingredient within a recipe. References the global {@link Ingredient}
+ * (name/warengruppe) by foreign key and carries the recipe-specific quantity, unit, and note.
  */
 @Embeddable
 @Data

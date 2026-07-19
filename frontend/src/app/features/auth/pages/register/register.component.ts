@@ -10,12 +10,17 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { AuthService } from '../../../../core/services/auth.service';
 
+/** Validates that the password and confirmation fields match. */
 function passwordsMatch(group: AbstractControl): ValidationErrors | null {
   const password = group.get('password')?.value;
   const confirm = group.get('confirmPassword')?.value;
   return password === confirm ? null : { passwordMismatch: true };
 }
 
+/**
+ * Registration page: validates the form (including password confirmation),
+ * creates a new account, and redirects to the dashboard on success.
+ */
 @Component({
   selector: 'app-register',
   standalone: true,
@@ -28,7 +33,7 @@ function passwordsMatch(group: AbstractControl): ValidationErrors | null {
 })
 export class RegisterComponent {
   form: FormGroup;
-  // Zoneless: in Subscribe-Callbacks gesetzter Zustand muss ein Signal sein
+  // Zoneless: state set inside subscribe callbacks must be a signal so the view updates.
   loading = signal(false);
   error = signal<string | null>(null);
 
@@ -40,6 +45,7 @@ export class RegisterComponent {
     }, { validators: passwordsMatch });
   }
 
+  /** Submits the registration form, navigating to the dashboard on success. */
   onSubmit(): void {
     if (this.form.invalid) return;
     this.loading.set(true);

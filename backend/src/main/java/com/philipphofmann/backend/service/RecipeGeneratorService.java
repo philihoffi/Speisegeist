@@ -40,8 +40,8 @@ public class RecipeGeneratorService {
     @Value("${openrouter.api.retry-max-attempts:3}")
     private int maxAttempts;
 
-    // Das Antwortformat wird bereits per json_schema (response_format) erzwungen.
-    // Dieser Prompt steuert daher nur Inhalt und Qualität, nicht die Struktur.
+    // The response format is already enforced via json_schema (response_format).
+    // This prompt therefore controls only content and quality, not the structure.
     private static final String SYSTEM_PROMPT = """
             Du bist ein erfahrener Koch-Assistent für vegane Küche. Erstelle aus den \
             angegebenen Zutaten ein vollständiges, alltagstaugliches veganes Rezept.
@@ -139,7 +139,7 @@ public class RecipeGeneratorService {
                 "properties", properties);
     }
 
-    /** Wie {@link Map#of} aber mit stabiler Einfüge-Reihenfolge (für {@code required}). */
+    /** Like {@link Map#of} but with stable insertion order (needed for {@code required}). */
     private static Map<String, Object> orderedMap(Object... keyValues) {
         Map<String, Object> map = new LinkedHashMap<>();
         for (int i = 0; i < keyValues.length; i += 2) {

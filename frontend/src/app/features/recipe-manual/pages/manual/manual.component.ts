@@ -14,6 +14,10 @@ import { ApiService } from '../../../../core/services/api.service';
 import { IngredientDraft, Recipe, StepDraft } from '../../../../core/models/recipe.model';
 import { buildIngredientsPayload, buildStepsPayload, emptyIngredientDraft, emptyStepDraft } from '../../../../core/utils/recipe-form.util';
 
+/**
+ * Manual recipe entry page: a form to create a recipe by hand with ingredients,
+ * steps, tags, and metadata.
+ */
 @Component({
   selector: 'app-manual-recipe',
   standalone: true,
@@ -39,28 +43,33 @@ export class ManualRecipeComponent {
   ingredients: IngredientDraft[] = [emptyIngredientDraft()];
   steps: StepDraft[] = [emptyStepDraft()];
 
-  // Zoneless: Zustand, der im HTTP-Subscribe-Callback gesetzt wird, muss ein Signal sein
+  // Zoneless: state set inside the HTTP subscribe callback must be a signal.
   saving = signal(false);
   error = signal<string | null>(null);
 
   constructor(private api: ApiService, private router: Router) {}
 
+  /** Appends a blank ingredient row to the form. */
   addIngredientRow(): void {
     this.ingredients.push(emptyIngredientDraft());
   }
 
+  /** Removes the ingredient row at the given index. */
   removeIngredientRow(index: number): void {
     this.ingredients.splice(index, 1);
   }
 
+  /** Appends a blank step row to the form. */
   addStepRow(): void {
     this.steps.push(emptyStepDraft());
   }
 
+  /** Removes the step row at the given index. */
   removeStepRow(index: number): void {
     this.steps.splice(index, 1);
   }
 
+  /** Adds the trimmed tag input to the tag list, ignoring duplicates. */
   addTag(): void {
     const value = this.tagInput.trim();
     if (value && !this.tags.includes(value)) {
@@ -69,16 +78,19 @@ export class ManualRecipeComponent {
     this.tagInput = '';
   }
 
+  /** Removes the tag at the given index. */
   removeTag(index: number): void {
     this.tags.splice(index, 1);
   }
 
+  /** Whether the form has enough content to be submitted. */
   get canSubmit(): boolean {
     return this.name.trim().length > 0
       && this.ingredients.some(i => i.name.trim().length > 0)
       && this.steps.some(s => s.instruction.trim().length > 0);
   }
 
+  /** Builds the payload and creates the recipe, navigating to its detail on success. */
   submit(): void {
     if (!this.canSubmit || this.saving()) return;
     this.saving.set(true);

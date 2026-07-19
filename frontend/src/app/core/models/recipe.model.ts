@@ -1,3 +1,4 @@
+/** A user-owned recipe. */
 export interface Recipe {
   id: string;
   userId: string;
@@ -19,6 +20,7 @@ export interface Recipe {
   updatedAt: string;
 }
 
+/** An ingredient used within a recipe. */
 export interface RecipeIngredient {
   name: string;
   quantity?: number;
@@ -27,12 +29,14 @@ export interface RecipeIngredient {
   notes?: string;
 }
 
+/** A single cooking step. */
 export interface CookingStep {
   stepNumber: number;
   instruction: string;
   durationMinutes?: number;
 }
 
+/** Query filters used when searching recipes. */
 export interface SearchFilters {
   search?: string;
   tag?: string;
@@ -40,6 +44,7 @@ export interface SearchFilters {
   size?: number;
 }
 
+/** Generic paged response envelope. */
 export interface PageResponse<T> {
   content: T[];
   totalElements: number;
@@ -47,6 +52,7 @@ export interface PageResponse<T> {
   currentPage: number;
 }
 
+/** Editable draft of an ingredient in a form. */
 export interface IngredientDraft {
   name: string;
   quantity: number | null;
@@ -55,11 +61,13 @@ export interface IngredientDraft {
   notes: string;
 }
 
+/** Editable draft of a cooking step in a form. */
 export interface StepDraft {
   instruction: string;
   durationMinutes: number | null;
 }
 
+/** Request payload to generate a recipe from ingredients and preferences. */
 export interface RecipeGenerationRequest {
   ingredients: string[];
   preferences?: {

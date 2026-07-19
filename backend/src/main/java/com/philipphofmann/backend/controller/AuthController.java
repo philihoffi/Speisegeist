@@ -13,6 +13,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * REST endpoints for user registration and login. Public (no authentication required).
+ */
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
@@ -20,12 +23,24 @@ public class AuthController {
 
     private final AuthService authService;
 
+    /**
+     * Registers a new user and returns a JWT for immediate sign-in.
+     *
+     * @param request the registration payload
+     * @return the created user's auth response
+     */
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
         AuthResponse response = authService.register(request.email(), request.password());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    /**
+     * Authenticates a user and returns a JWT on success.
+     *
+     * @param request the login payload
+     * @return the authenticated user's auth response
+     */
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request.email(), request.password()));

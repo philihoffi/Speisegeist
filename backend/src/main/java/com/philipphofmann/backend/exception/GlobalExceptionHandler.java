@@ -9,6 +9,10 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
 
+/**
+ * Translates exceptions into consistent JSON error responses with an HTTP status,
+ * a human-readable message, and a timestamp.
+ */
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {

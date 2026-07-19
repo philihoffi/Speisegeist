@@ -18,6 +18,9 @@ import org.springframework.web.bind.annotation.*;
 import java.time.Duration;
 import java.util.UUID;
 
+/**
+ * REST endpoints for recipe management: generation, search, CRUD, rating, and image retrieval.
+ */
 @RestController
 @RequestMapping("/recipes")
 @RequiredArgsConstructor
@@ -26,6 +29,13 @@ public class RecipeController {
     private final RecipeService recipeService;
     private final RecipeImageService recipeImageService;
 
+    /**
+     * Generates a new recipe from the given ingredients and preferences and stores it.
+     *
+     * @param user    the authenticated user
+     * @param request the generation request
+     * @return the created recipe
+     */
     @PostMapping("/generate")
     public ResponseEntity<RecipeResponse> generate(
             @AuthenticationPrincipal AuthenticatedUser user,
@@ -34,6 +44,16 @@ public class RecipeController {
         return ResponseEntity.status(HttpStatus.CREATED).body(RecipeResponse.from(recipe));
     }
 
+    /**
+     * Searches the user's recipes by text or tag, returning a page of summaries.
+     *
+     * @param user   the authenticated user
+     * @param search optional free-text search (name, ingredient, or tag)
+     * @param tag    optional tag filter
+     * @param page   zero-based page index
+     * @param size   page size
+     * @return a page of recipe summaries
+     */
     @GetMapping
     public ResponseEntity<PageResponse<RecipeSummaryResponse>> search(
             @AuthenticationPrincipal AuthenticatedUser user,
@@ -44,6 +64,13 @@ public class RecipeController {
         return ResponseEntity.ok(recipeService.searchRecipes(user.userId(), search, tag, page, size));
     }
 
+    /**
+     * Returns a single recipe by id.
+     *
+     * @param user the authenticated user
+     * @param id   the recipe id
+     * @return the full recipe
+     */
     @GetMapping("/{id}")
     public ResponseEntity<RecipeResponse> get(
             @AuthenticationPrincipal AuthenticatedUser user,
@@ -52,7 +79,12 @@ public class RecipeController {
     }
 
     /**
-     * Liefert das Bild des Rezepts aus der DB (wird beim ersten Abruf generiert und gespeichert).
+     * Returns the recipe image. On first access the image is generated via the AI
+     * provider and persisted, then served from the database on subsequent calls.
+     *
+     * @param user the authenticated user
+     * @param id   the recipe id
+     * @return the image bytes with a long private cache-control header
      */
     @GetMapping("/{id}/image")
     public ResponseEntity<byte[]> getImage(
@@ -68,6 +100,13 @@ public class RecipeController {
                 .body(image.getData());
     }
 
+    /**
+     * Creates a recipe manually for the authenticated user.
+     *
+     * @param user    the authenticated user
+     * @param request the recipe payload
+     * @return the created recipe
+     */
     @PostMapping
     public ResponseEntity<RecipeResponse> create(
             @AuthenticationPrincipal AuthenticatedUser user,
@@ -76,6 +115,14 @@ public class RecipeController {
         return ResponseEntity.status(HttpStatus.CREATED).body(RecipeResponse.from(recipe));
     }
 
+    /**
+     * Updates an existing recipe owned by the authenticated user.
+     *
+     * @param user    the authenticated user
+     * @param id      the recipe id
+     * @param request the recipe payload
+     * @return the updated recipe
+     */
     @PutMapping("/{id}")
     public ResponseEntity<RecipeResponse> update(
             @AuthenticationPrincipal AuthenticatedUser user,
@@ -84,6 +131,12 @@ public class RecipeController {
         return ResponseEntity.ok(RecipeResponse.from(recipeService.updateRecipe(user.userId(), id, request)));
     }
 
+    /**
+     * Deletes a recipe owned by the authenticated user.
+     *
+     * @param user the authenticated user
+     * @param id   the recipe id
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
             @AuthenticationPrincipal AuthenticatedUser user,
@@ -92,6 +145,14 @@ public class RecipeController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Stores a star rating (0.0 - 5.0) for the given recipe.
+     *
+     * @param user    the authenticated user
+     * @param id      the recipe id
+     * @param request the rating payload
+     * @return the updated recipe
+     */
     @PostMapping("/{id}/rating")
     public ResponseEntity<RecipeResponse> rate(
             @AuthenticationPrincipal AuthenticatedUser user,

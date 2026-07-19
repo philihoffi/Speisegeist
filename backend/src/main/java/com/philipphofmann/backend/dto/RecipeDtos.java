@@ -10,16 +10,21 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+/**
+ * Data transfer records for recipe requests, responses, and generation preferences.
+ */
 public final class RecipeDtos {
 
     private RecipeDtos() {
     }
 
+    /** Request to generate a recipe from a list of ingredients and optional preferences. */
     public record RecipeGenerationRequest(
             @NotEmpty List<@NotBlank String> ingredients,
             GenerationPreferences preferences) {
     }
 
+    /** Optional constraints applied to a generated recipe. */
     public record GenerationPreferences(
             String cuisine,
             String mealType,
@@ -27,6 +32,7 @@ public final class RecipeDtos {
             @Min(1) @Max(20) Integer servings) {
     }
 
+    /** Payload for creating or updating a recipe manually. */
     public record RecipeRequest(
             @NotBlank String name,
             String description,
@@ -39,9 +45,11 @@ public final class RecipeDtos {
             Set<String> tags) {
     }
 
+    /** Payload carrying a recipe star rating. */
     public record RatingRequest(@NotNull @DecimalMin("0.0") @DecimalMax("5.0") Double rating) {
     }
 
+    /** Ingredient representation used in recipe DTOs. */
     public record IngredientDto(String name, Double quantity, String unit, String warengruppe, String notes) {
 
         public static IngredientDto from(RecipeIngredient i) {
@@ -55,6 +63,7 @@ public final class RecipeDtos {
         }
     }
 
+    /** A single cooking step representation used in recipe DTOs. */
     public record StepDto(Integer stepNumber, String instruction, Integer durationMinutes) {
 
         public static StepDto from(CookingStep s, int index) {
@@ -68,6 +77,7 @@ public final class RecipeDtos {
         }
     }
 
+    /** Lightweight recipe summary used in list/search results. */
     public record RecipeSummaryResponse(
             UUID id,
             UUID userId,
@@ -95,6 +105,7 @@ public final class RecipeDtos {
         }
     }
 
+    /** Full recipe representation including steps, used for detail views. */
     public record RecipeResponse(
             UUID id,
             UUID userId,
@@ -130,6 +141,7 @@ public final class RecipeDtos {
         }
     }
 
+    /** Generic page envelope for paged responses. */
     public record PageResponse<T>(
             List<T> content,
             long totalElements,

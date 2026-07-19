@@ -4,6 +4,11 @@ import { tap, finalize, catchError } from 'rxjs/operators';
 import { Recipe, RecipeGenerationRequest, SearchFilters, PageResponse } from '../models/recipe.model';
 import { ApiService } from './api.service';
 
+/**
+ * Stateful facade over {@link ApiService} for recipes. Exposes recipe lists,
+ * the selected recipe, loading and error state as observables, and keeps the
+ * in-memory list in sync with create/update/delete operations.
+ */
 @Injectable({
   providedIn: 'root'
 })
@@ -22,6 +27,7 @@ export class RecipeService {
 
   constructor(private api: ApiService) { }
 
+  /** Loads recipes according to the given filters and publishes the result. */
   loadRecipes(filters: SearchFilters = {}): void {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
@@ -42,10 +48,12 @@ export class RecipeService {
       });
   }
 
+  /** Marks the given recipe as the currently selected one. */
   selectRecipe(recipe: Recipe): void {
     this.selectedRecipeSubject.next(recipe);
   }
 
+  /** Generates a recipe and prepends it to the in-memory list. */
   generateRecipe(ingredients: string[], preferences?: any): Observable<Recipe> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
@@ -66,6 +74,7 @@ export class RecipeService {
       );
   }
 
+  /** Deletes a recipe and removes it from the in-memory list. */
   deleteRecipe(id: string): Observable<void> {
     return this.api.deleteRecipe(id)
       .pipe(
@@ -76,6 +85,7 @@ export class RecipeService {
       );
   }
 
+  /** Updates a recipe and reflects the change in the in-memory list. */
   updateRecipe(id: string, updates: Partial<Recipe>): Observable<Recipe> {
     return this.api.updateRecipe(id, updates)
       .pipe(
@@ -86,6 +96,7 @@ export class RecipeService {
       );
   }
 
+  /** Clears the current error state. */
   clearError(): void {
     this.errorSubject.next(null);
   }

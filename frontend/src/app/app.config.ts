@@ -6,6 +6,10 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { routes } from './app.routes';
 import { AuthInterceptor } from './core/interceptors/auth.interceptor';
 
+/**
+ * Application configuration: router, animations, HTTP client with the auth
+ * interceptor, and Material date providers.
+ */
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes),

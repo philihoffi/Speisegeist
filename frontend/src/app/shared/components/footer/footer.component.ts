@@ -1,6 +1,9 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
+/**
+ * Application footer showing the current year.
+ */
 @Component({
   selector: 'app-footer',
   standalone: true,

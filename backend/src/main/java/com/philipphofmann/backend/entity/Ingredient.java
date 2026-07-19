@@ -7,10 +7,10 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Globaler Zutaten-Katalog (Stammdaten). Jede Zutat existiert genau einmal
- * (Name global eindeutig, case-insensitive) und wird von {@link RecipeIngredient}
- * per Fremdschlüssel referenziert. Der Katalog wächst automatisch, sobald neue
- * Zutaten in Rezepten auftauchen.
+ * Global ingredient catalog (master data). Each ingredient exists exactly once
+ * (the name is globally unique, case-insensitive) and is referenced by its foreign
+ * key from {@link RecipeIngredient}. The catalog grows automatically as new
+ * ingredients appear in recipes.
  */
 @Entity
 @Table(name = "ingredients", indexes = {

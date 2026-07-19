@@ -23,6 +23,11 @@ import {
   toIngredientDrafts, toStepDrafts
 } from '../../../../core/utils/recipe-form.util';
 
+/**
+ * Recipe detail page: shows a recipe, supports inline editing, rating, and
+ * deletion. The edit form is kept in plain fields; signals are used for state
+ * that is updated from asynchronous callbacks.
+ */
 @Component({
   selector: 'app-detail',
   standalone: true,
@@ -35,8 +40,8 @@ import {
   styleUrl: './detail.component.scss'
 })
 export class DetailComponent implements OnInit {
-  // Zoneless: Zustand, der in Subscribe-Callbacks gesetzt wird, muss ein Signal sein,
-  // sonst rendert die View nach dem HTTP-Response nicht neu.
+  // Zoneless: state set inside subscribe callbacks must be a signal so the view
+  // re-renders after the HTTP response.
   recipe = signal<Recipe | null>(null);
   editing = signal(false);
   saving = signal(false);
@@ -63,6 +68,7 @@ export class DetailComponent implements OnInit {
     private recipeService: RecipeService
   ) {}
 
+  /** Loads the recipe identified by the route's id parameter. */
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (!id) {
@@ -78,12 +84,14 @@ export class DetailComponent implements OnInit {
     });
   }
 
+  /** Scales a quantity from the recipe's servings to the currently displayed servings. */
   scaledQuantity(quantity: number): number {
     const servings = this.recipe()?.servings;
     if (!servings) return quantity;
     return quantity * (this.displayServings / servings);
   }
 
+  /** Copies the recipe into the edit form fields and switches to edit mode. */
   startEdit(): void {
     const recipe = this.recipe();
     if (!recipe) return;
@@ -101,27 +109,33 @@ export class DetailComponent implements OnInit {
     this.editing.set(true);
   }
 
+  /** Discards pending edits and leaves edit mode. */
   cancelEdit(): void {
     this.editing.set(false);
     this.editError.set(null);
   }
 
+  /** Appends a blank ingredient row to the edit form. */
   addIngredientRow(): void {
     this.editIngredients.push(emptyIngredientDraft());
   }
 
+  /** Removes the ingredient row at the given index. */
   removeIngredientRow(index: number): void {
     this.editIngredients.splice(index, 1);
   }
 
+  /** Appends a blank step row to the edit form. */
   addStepRow(): void {
     this.editSteps.push(emptyStepDraft());
   }
 
+  /** Removes the step row at the given index. */
   removeStepRow(index: number): void {
     this.editSteps.splice(index, 1);
   }
 
+  /** Adds the trimmed tag input to the edit tag list. */
   addTag(): void {
     const value = this.editTagInput.trim();
     if (value && !this.editTags.includes(value)) {
@@ -130,16 +144,19 @@ export class DetailComponent implements OnInit {
     this.editTagInput = '';
   }
 
+  /** Removes the tag at the given index. */
   removeTag(index: number): void {
     this.editTags.splice(index, 1);
   }
 
+  /** Whether the edit form has enough content to be saved. */
   get canSaveEdit(): boolean {
     return this.editName.trim().length > 0
       && this.editIngredients.some(i => i.name.trim().length > 0)
       && this.editSteps.some(s => s.instruction.trim().length > 0);
   }
 
+  /** Persists the edited recipe and exits edit mode on success. */
   saveEdit(): void {
     const recipe = this.recipe();
     if (!recipe || !this.canSaveEdit) return;
@@ -170,6 +187,7 @@ export class DetailComponent implements OnInit {
     });
   }
 
+  /** Stores a star rating for the recipe. */
   rate(stars: number): void {
     const recipe = this.recipe();
     if (!recipe) return;
@@ -181,6 +199,7 @@ export class DetailComponent implements OnInit {
     });
   }
 
+  /** Deletes the recipe after confirmation and returns to the library. */
   deleteRecipe(): void {
     const recipe = this.recipe();
     if (!recipe) return;
