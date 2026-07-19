@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { AuthGuard } from './core/guards/auth.guard';
+import { AdminGuard } from './core/guards/admin.guard';
 
 /**
  * Application routes. Public auth routes sit under {@code /auth}; all recipe
@@ -45,6 +46,21 @@ export const routes: Routes = [
     path: 'ingredients',
     canActivate: [AuthGuard],
     loadComponent: () => import('./features/ingredient-management/pages/ingredients/ingredients.component').then(m => m.IngredientsComponent)
+  },
+  {
+    path: 'admin',
+    canActivate: [AuthGuard, AdminGuard],
+    children: [
+      {
+        path: 'users',
+        loadComponent: () => import('./features/admin/pages/users/users.component').then(m => m.AdminUsersComponent)
+      },
+      {
+        path: '',
+        redirectTo: 'users',
+        pathMatch: 'full'
+      }
+    ]
   },
   {
     path: '',

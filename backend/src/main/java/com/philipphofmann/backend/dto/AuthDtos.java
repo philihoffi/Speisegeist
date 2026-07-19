@@ -24,7 +24,7 @@ public final class AuthDtos {
             @NotBlank String password) {
     }
 
-    /** Authentication response carrying the JWT and the user's email. */
-    public record AuthResponse(String token, String email) {
+    /** Authentication response carrying the JWT, email, and role. */
+    public record AuthResponse(String token, String email, String role) {
     }
 }

@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -46,11 +47,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 && SecurityContextHolder.getContext().getAuthentication() == null) {
             UUID userId = tokenProvider.getUserId(token);
             String email = tokenProvider.getEmail(token);
+            String role = tokenProvider.getRole(token);
 
-            AuthenticatedUser principal = new AuthenticatedUser(userId, email);
+            AuthenticatedUser principal = new AuthenticatedUser(userId, email, role);
+            List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+            authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+            if ("ADMIN".equals(role)) {
+                authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
+            }
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
-                            principal, null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+                            principal, null, authorities);
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
@@ -77,7 +84,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      *
      * @param userId the authenticated user's id
      * @param email  the authenticated user's email
+     * @param role   the authenticated user's role
      */
-    public record AuthenticatedUser(UUID userId, String email) {
+    public record AuthenticatedUser(UUID userId, String email, String role) {
     }
 }

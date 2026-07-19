@@ -1,0 +1,35 @@
+.page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+h1 {
+  margin: 0 0 24px;
+  font-size: 1.6rem;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  background: var(--sg-glass);
+
+  th {
+    font-weight: 600;
+    color: var(--sg-ink-soft);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  td {
+    vertical-align: middle;
+  }
+}
+
+mat-select {
+  width: 120px;
+}

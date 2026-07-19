@@ -15,6 +15,9 @@
       <a mat-button routerLink="/recipes/new">Manuell erfassen</a>
       <a mat-button routerLink="/recipes/library">Bibliothek</a>
       <a mat-button routerLink="/ingredients">Zutaten</a>
+      @if ((auth.currentUser$ | async)?.role === 'ADMIN') {
+        <a mat-button routerLink="/admin">Verwaltung</a>
+      }
     </span>
     <button mat-icon-button [matMenuTriggerFor]="userMenu" aria-label="Menü">
       <mat-icon>account_circle</mat-icon>
@@ -33,6 +36,11 @@
         <a mat-menu-item routerLink="/ingredients">
           <mat-icon>kitchen</mat-icon> Zutaten
         </a>
+        @if ((auth.currentUser$ | async)?.role === 'ADMIN') {
+          <a mat-menu-item routerLink="/admin">
+            <mat-icon>admin_panel_settings</mat-icon> Verwaltung
+          </a>
+        }
       </div>
       @if (auth.currentUser$ | async; as user) {
         <div class="user-email">{{ user.email }}</div>

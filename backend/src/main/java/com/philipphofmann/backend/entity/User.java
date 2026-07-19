@@ -2,12 +2,14 @@ package com.philipphofmann.backend.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
  * Application user holding credentials and login metadata. The email is the unique
  * login identifier and the password is stored as a BCrypt hash.
+ * Includes a {@link Role} for admin/user distinction.
  */
 @Entity
 @Table(name = "users")
@@ -29,6 +31,11 @@ public class User {
     @Column(nullable = false)
     private String passwordHash;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private Role role = Role.USER;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -37,5 +44,9 @@ public class User {
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+    }
+
+    public enum Role {
+        USER, ADMIN
     }
 }

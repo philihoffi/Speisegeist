@@ -14,7 +14,7 @@ import java.util.UUID;
 
 /**
  * Creates and verifies JWT access tokens. Tokens carry the user's email as the
- * subject and the user id as a custom {@code userId} claim.
+ * subject and the user id and role as custom claims.
  */
 @Component
 public class JwtTokenProvider {
@@ -34,14 +34,16 @@ public class JwtTokenProvider {
      *
      * @param userId the user id stored in the {@code userId} claim
      * @param email  the user email used as the token subject
+     * @param role   the user role stored in the {@code role} claim
      * @return the compact, signed JWT string
      */
-    public String generateToken(UUID userId, String email) {
+    public String generateToken(UUID userId, String email, String role) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + expirationSeconds * 1000);
         return Jwts.builder()
                 .subject(email)
                 .claim("userId", userId.toString())
+                .claim("role", role)
                 .issuedAt(now)
                 .expiration(expiry)
                 .signWith(key)
@@ -81,6 +83,16 @@ public class JwtTokenProvider {
      */
     public UUID getUserId(String token) {
         return UUID.fromString(parseClaims(token).get("userId", String.class));
+    }
+
+    /**
+     * Returns the role stored in the {@code role} claim.
+     *
+     * @param token the JWT string
+     * @return the user role
+     */
+    public String getRole(String token) {
+        return parseClaims(token).get("role", String.class);
     }
 
     /**

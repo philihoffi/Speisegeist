@@ -37,7 +37,7 @@ class AuthServiceTest {
     void register_normalizesEmailAndSucceeds() {
         when(userRepository.findByEmail("a@b.com")).thenReturn(Optional.empty());
         when(passwordEncoder.encode("pw")).thenReturn("hash");
-        when(tokenProvider.generateToken(any(), any())).thenReturn("tok");
+        when(tokenProvider.generateToken(any(), any(), any())).thenReturn("tok");
         when(userRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
         AuthResponse response = authService.register(" A@B.com ", "pw");
@@ -71,7 +71,7 @@ class AuthServiceTest {
         User user = User.builder().email("a@b.com").passwordHash("hash").build();
         when(userRepository.findByEmail("a@b.com")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("pw", "hash")).thenReturn(true);
-        when(tokenProvider.generateToken(any(), any())).thenReturn("tok");
+        when(tokenProvider.generateToken(any(), any(), any())).thenReturn("tok");
         when(userRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
         authService.login("a@b.com", "pw");

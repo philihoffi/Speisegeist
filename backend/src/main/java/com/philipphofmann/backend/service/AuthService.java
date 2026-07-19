@@ -45,8 +45,8 @@ public class AuthService {
                 .build();
         user = userRepository.save(user);
 
-        String token = tokenProvider.generateToken(user.getId(), user.getEmail());
-        return new AuthResponse(token, user.getEmail());
+        String token = tokenProvider.generateToken(user.getId(), user.getEmail(), user.getRole().name());
+        return new AuthResponse(token, user.getEmail(), user.getRole().name());
     }
 
     /**
@@ -69,8 +69,8 @@ public class AuthService {
         user.setLastLogin(LocalDateTime.now());
         userRepository.save(user);
 
-        String token = tokenProvider.generateToken(user.getId(), user.getEmail());
-        return new AuthResponse(token, user.getEmail());
+        String token = tokenProvider.generateToken(user.getId(), user.getEmail(), user.getRole().name());
+        return new AuthResponse(token, user.getEmail(), user.getRole().name());
     }
 
     /**

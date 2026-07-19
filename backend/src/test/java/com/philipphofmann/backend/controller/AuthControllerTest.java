@@ -33,7 +33,7 @@ class AuthControllerTest {
     @Test
     void register_returns201() throws Exception {
         when(authService.register(any(), any()))
-                .thenReturn(new AuthResponse("tok", "a@b.com"));
+                .thenReturn(new AuthResponse("tok", "a@b.com", "USER"));
 
         mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -45,7 +45,7 @@ class AuthControllerTest {
     @Test
     void login_returns200() throws Exception {
         when(authService.login(any(), any()))
-                .thenReturn(new AuthResponse("tok", "a@b.com"));
+                .thenReturn(new AuthResponse("tok", "a@b.com", "USER"));
 
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)

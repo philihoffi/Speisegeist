@@ -57,7 +57,7 @@ export class AuthService {
 
   private handleAuthResponse(response: AuthResponse): void {
     localStorage.setItem(this.TOKEN_KEY, response.token);
-    this.currentUserSubject.next({ email: response.email });
+    this.currentUserSubject.next({ email: response.email, role: response.role });
     this.isAuthenticatedSubject.next(true);
   }
 
@@ -74,11 +74,11 @@ export class AuthService {
     }
     this.isAuthenticatedSubject.next(true);
     if (claims?.sub) {
-      this.currentUserSubject.next({ email: claims.sub });
+      this.currentUserSubject.next({ email: claims.sub, role: claims.role });
     }
   }
 
-  private decodeToken(token: string): { sub?: string; exp?: number } | null {
+  private decodeToken(token: string): { sub?: string; exp?: number; role?: string } | null {
     try {
       const payload = token.split('.')[1];
       if (!payload) {
@@ -89,5 +89,9 @@ export class AuthService {
     } catch {
       return null;
     }
+  }
+
+  isAdmin(): boolean {
+    return this.currentUserSubject.value?.role === 'ADMIN';
   }
 }

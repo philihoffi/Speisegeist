@@ -2,6 +2,7 @@
 export interface User {
   email: string;
   id?: string;
+  role?: string;
 }
 
 /** Payload for a login request. */
@@ -17,8 +18,18 @@ export interface RegisterRequest {
   confirmPassword?: string;
 }
 
-/** Response carrying the JWT and the user's email. */
+/** Response carrying the JWT, the user's email, and role. */
 export interface AuthResponse {
   email: string;
   token: string;
+  role: string;
+}
+
+/** User item for admin list. */
+export interface UserListItem {
+  id: string;
+  email: string;
+  role: string;
+  createdAt: string;
+  lastLogin?: string;
 }
