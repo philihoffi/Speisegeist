@@ -3,6 +3,7 @@ package com.philipphofmann.backend.service;
 import com.philipphofmann.backend.dto.AuthDtos.AuthResponse;
 import com.philipphofmann.backend.entity.User;
 import com.philipphofmann.backend.exception.AuthException;
+import com.philipphofmann.backend.exception.EmailAlreadyExistsException;
 import com.philipphofmann.backend.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -51,7 +52,9 @@ class AuthServiceTest {
         when(userRepository.findByEmail("a@b.com"))
                 .thenReturn(Optional.of(User.builder().email("a@b.com").build()));
 
-        assertThrows(AuthException.class, () -> authService.register("a@b.com", "pw"));
+        // Muss die 409-typisierte Subklasse sein, damit der GlobalExceptionHandler
+        // Conflict (nicht Unauthorized) zurueckgibt und der Nutzer nicht ausgeloggt wird.
+        assertThrows(EmailAlreadyExistsException.class, () -> authService.register("a@b.com", "pw"));
     }
 
     @Test

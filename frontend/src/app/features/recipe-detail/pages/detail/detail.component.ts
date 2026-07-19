@@ -40,6 +40,7 @@ export class DetailComponent implements OnInit {
   editing = signal(false);
   saving = signal(false);
   editError = signal<string | null>(null);
+  actionError = signal<string | null>(null);
 
   displayServings = 2;
 
@@ -171,8 +172,11 @@ export class DetailComponent implements OnInit {
   rate(stars: number): void {
     const recipe = this.recipe();
     if (!recipe) return;
-    this.api.rateRecipe(recipe.id, stars).subscribe(updated => {
-      this.recipe.set(updated);
+    this.actionError.set(null);
+    this.api.rateRecipe(recipe.id, stars).subscribe({
+      next: (updated) => this.recipe.set(updated),
+      error: (err) => this.actionError.set(err.error?.message
+        || 'Bewertung konnte nicht gespeichert werden.')
     });
   }
 
@@ -180,8 +184,11 @@ export class DetailComponent implements OnInit {
     const recipe = this.recipe();
     if (!recipe) return;
     if (!confirm(`Rezept "${recipe.name}" wirklich löschen?`)) return;
-    this.recipeService.deleteRecipe(recipe.id).subscribe(() => {
-      this.router.navigate(['/recipes/library']);
+    this.actionError.set(null);
+    this.recipeService.deleteRecipe(recipe.id).subscribe({
+      next: () => this.router.navigate(['/recipes/library']),
+      error: (err) => this.actionError.set(err.error?.message
+        || 'Rezept konnte nicht gelöscht werden.')
     });
   }
 }

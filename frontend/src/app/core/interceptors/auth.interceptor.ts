@@ -18,9 +18,10 @@ export class AuthInterceptor implements HttpInterceptor {
         }
       });
     }
+    const isAuthEndpoint = req.url.includes('/auth/');
     return next.handle(req).pipe(
       catchError((err) => {
-        if (err?.status === 401) {
+        if (err?.status === 401 && !isAuthEndpoint) {
           this.authService.logout();
           this.router.navigate(['/auth/login']);
         }

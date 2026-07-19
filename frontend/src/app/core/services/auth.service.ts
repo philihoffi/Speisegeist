@@ -58,11 +58,32 @@ export class AuthService {
   }
 
   private loadUserFromToken(): void {
-    if (this.hasToken()) {
-      const token = this.getToken();
-      // In production, decode JWT to get user info
-      // For now, just mark as authenticated
-      this.isAuthenticatedSubject.next(true);
+    const token = this.getToken();
+    if (!token) {
+      return;
+    }
+    const claims = this.decodeToken(token);
+    // Token abgelaufen -> Zustand bereinigen, damit UI nicht faelschlich "eingeloggt" zeigt
+    if (claims?.exp && claims.exp * 1000 < Date.now()) {
+      this.logout();
+      return;
+    }
+    this.isAuthenticatedSubject.next(true);
+    if (claims?.sub) {
+      this.currentUserSubject.next({ email: claims.sub });
+    }
+  }
+
+  private decodeToken(token: string): { sub?: string; exp?: number } | null {
+    try {
+      const payload = token.split('.')[1];
+      if (!payload) {
+        return null;
+      }
+      const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+      return JSON.parse(json);
+    } catch {
+      return null;
     }
   }
 }

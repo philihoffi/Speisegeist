@@ -4,6 +4,7 @@ import com.philipphofmann.backend.config.JwtTokenProvider;
 import com.philipphofmann.backend.dto.AuthDtos.AuthResponse;
 import com.philipphofmann.backend.entity.User;
 import com.philipphofmann.backend.exception.AuthException;
+import com.philipphofmann.backend.exception.EmailAlreadyExistsException;
 import com.philipphofmann.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,7 +25,7 @@ public class AuthService {
     public AuthResponse register(String email, String password) {
         email = normalizeEmail(email);
         if (userRepository.findByEmail(email).isPresent()) {
-            throw new AuthException("E-Mail ist bereits registriert");
+            throw new EmailAlreadyExistsException("E-Mail ist bereits registriert");
         }
 
         User user = User.builder()

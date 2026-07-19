@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { tap, finalize } from 'rxjs/operators';
+import { BehaviorSubject, Observable, throwError } from 'rxjs';
+import { tap, finalize, catchError } from 'rxjs/operators';
 import { Recipe, RecipeGenerationRequest, SearchFilters, PageResponse } from '../models/recipe.model';
 import { ApiService } from './api.service';
 
@@ -56,6 +56,11 @@ export class RecipeService {
         tap(recipe => {
           this.recipeListSubject.next([recipe, ...this.recipeListSubject.value]);
           this.selectedRecipeSubject.next(recipe);
+        }),
+        catchError(err => {
+          this.errorSubject.next(err.error?.message
+            || 'Rezept konnte nicht generiert werden. Bitte erneut versuchen.');
+          return throwError(() => err);
         }),
         finalize(() => this.loadingSubject.next(false))
       );

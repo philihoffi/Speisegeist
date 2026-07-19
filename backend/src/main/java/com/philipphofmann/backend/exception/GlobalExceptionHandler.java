@@ -25,6 +25,12 @@ public class GlobalExceptionHandler {
                 .body(ErrorResponse.of(HttpStatus.NOT_FOUND, e.getMessage()));
     }
 
+    @ExceptionHandler(EmailAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleEmailExists(EmailAlreadyExistsException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ErrorResponse.of(HttpStatus.CONFLICT, e.getMessage()));
+    }
+
     @ExceptionHandler(AuthException.class)
     public ResponseEntity<ErrorResponse> handleAuth(AuthException e) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)

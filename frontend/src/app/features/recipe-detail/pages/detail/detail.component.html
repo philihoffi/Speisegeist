@@ -17,6 +17,8 @@
       @if (recipe.description) {
         <p class="description">{{ recipe.description }}</p>
       }
+
+      <app-error-banner [message]="actionError()"></app-error-banner>
     } @else {
       <div class="edit-form">
         <mat-form-field appearance="outline" class="full-width">
