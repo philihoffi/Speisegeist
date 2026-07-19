@@ -31,14 +31,14 @@ public class RecipeImageService {
 
     /**
      * Liefert das (ggf. neu generierte) Bild eines Rezepts. Prüft implizit über
-     * {@link RecipeService#getRecipe} den Eigentümer und dass das Rezept existiert.
+     * {@link RecipeService#getRecipe}, dass das Rezept existiert.
      *
      * <p>Bewusst nicht {@code @Transactional}: der (langsame) OpenRouter-Aufruf soll keine
      * DB-Verbindung offen halten. DB-Zugriffe (findById/save) laufen jeweils in ihrer eigenen
      * Repository-Transaktion.
      */
-    public RecipeImage getOrCreateImage(UUID userId, UUID recipeId) {
-        Recipe recipe = recipeService.getRecipe(userId, recipeId);
+    public RecipeImage getOrCreateImage(UUID recipeId) {
+        Recipe recipe = recipeService.getRecipe(recipeId);
 
         return recipeImageRepository.findById(recipeId)
                 .orElseGet(() -> generateAndStore(recipe));

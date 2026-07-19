@@ -6,13 +6,12 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 /**
- * A user-owned recipe: ingredients, ordered cooking steps, tags, and metadata.
+ * A recipe: ingredients, ordered cooking steps, tags, and metadata.
  * Generation provenance is tracked via {@link SourceType}, the provider model, and
  * the application version that produced the recipe.
  */
 @Entity
 @Table(name = "recipes", indexes = {
-    @Index(name = "idx_user_id", columnList = "user_id"),
     @Index(name = "idx_name", columnList = "name"),
     @Index(name = "idx_created_at", columnList = "created_at")
 })
@@ -27,9 +26,6 @@ public class Recipe {
     @GeneratedValue(strategy = GenerationType.UUID)
     @EqualsAndHashCode.Include
     private UUID id;
-
-    @Column(nullable = false)
-    private UUID userId;
 
     @Column(nullable = false)
     private String name;

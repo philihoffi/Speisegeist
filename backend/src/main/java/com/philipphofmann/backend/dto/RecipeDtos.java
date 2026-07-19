@@ -80,7 +80,6 @@ public final class RecipeDtos {
     /** Lightweight recipe summary used in list/search results. */
     public record RecipeSummaryResponse(
             UUID id,
-            UUID userId,
             String name,
             String description,
             List<IngredientDto> ingredients,
@@ -97,7 +96,7 @@ public final class RecipeDtos {
         public static RecipeSummaryResponse from(Recipe r) {
             List<IngredientDto> ingredients = r.getIngredients() == null ? List.of() : r.getIngredients().stream().map(IngredientDto::from).toList();
             return new RecipeSummaryResponse(
-                    r.getId(), r.getUserId(), r.getName(), r.getDescription(),
+                    r.getId(), r.getName(), r.getDescription(),
                     ingredients,
                     r.getPreparationTimeMinutes(), r.getCookTimeMinutes(),
                     r.getServings(), r.getEstimatedKcal(), r.getRating(), r.getTags(),
@@ -108,7 +107,6 @@ public final class RecipeDtos {
     /** Full recipe representation including steps, used for detail views. */
     public record RecipeResponse(
             UUID id,
-            UUID userId,
             String name,
             String description,
             List<IngredientDto> ingredients,
@@ -132,7 +130,7 @@ public final class RecipeDtos {
                     : java.util.stream.IntStream.range(0, r.getSteps().size())
                             .mapToObj(i -> StepDto.from(r.getSteps().get(i), i)).toList();
             return new RecipeResponse(
-                    r.getId(), r.getUserId(), r.getName(), r.getDescription(),
+                    r.getId(), r.getName(), r.getDescription(),
                     ingredients, steps,
                     r.getPreparationTimeMinutes(), r.getCookTimeMinutes(),
                     r.getServings(), r.getEstimatedKcal(), r.getRating(), r.getTags(),

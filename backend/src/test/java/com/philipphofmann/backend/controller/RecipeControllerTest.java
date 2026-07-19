@@ -1,20 +1,16 @@
 package com.philipphofmann.backend.controller;
 
-import com.philipphofmann.backend.config.JwtAuthenticationFilter.AuthenticatedUser;
 import com.philipphofmann.backend.dto.RecipeDtos.PageResponse;
 import com.philipphofmann.backend.entity.Recipe;
 import com.philipphofmann.backend.exception.GlobalExceptionHandler;
 import com.philipphofmann.backend.exception.RecipeNotFoundException;
 import com.philipphofmann.backend.service.RecipeService;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
@@ -35,27 +31,17 @@ class RecipeControllerTest {
     private RecipeService recipeService;
 
     private MockMvc mockMvc;
-    private final UUID userId = UUID.randomUUID();
 
     @BeforeEach
     void setup() {
-        mockMvc = MockMvcBuilders.standaloneSetup(new RecipeController(recipeService))
+        mockMvc = MockMvcBuilders.standaloneSetup(new RecipeController(recipeService, null))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
-        AuthenticatedUser principal = new AuthenticatedUser(userId, "a@b.com");
-        var auth = new UsernamePasswordAuthenticationToken(principal, null, List.of());
-        SecurityContextHolder.createEmptyContext();
-        SecurityContextHolder.getContext().setAuthentication(auth);
-    }
-
-    @AfterEach
-    void clear() {
-        SecurityContextHolder.clearContext();
     }
 
     @Test
     void search_returnsOkWithPage() throws Exception {
-        when(recipeService.searchRecipes(any(), any(), any(), anyInt(), anyInt()))
+        when(recipeService.searchRecipes(any(), any(), anyInt(), anyInt()))
                 .thenReturn(new PageResponse<>(List.of(), 0, 1, 0));
 
         mockMvc.perform(MockMvcRequestBuilders.get("/recipes").param("search", "tofu"))
@@ -65,7 +51,7 @@ class RecipeControllerTest {
 
     @Test
     void getRecipe_notFound_returns404() throws Exception {
-        when(recipeService.getRecipe(any(), any())).thenThrow(new RecipeNotFoundException(UUID.randomUUID()));
+        when(recipeService.getRecipe(any())).thenThrow(new RecipeNotFoundException(UUID.randomUUID()));
 
         mockMvc.perform(MockMvcRequestBuilders.get("/recipes/" + UUID.randomUUID()))
                 .andExpect(MockMvcResultMatchers.status().isNotFound());
@@ -73,8 +59,8 @@ class RecipeControllerTest {
 
     @Test
     void getRecipe_found_returns200() throws Exception {
-        Recipe recipe = Recipe.builder().name("Test").userId(userId).build();
-        when(recipeService.getRecipe(any(), any())).thenReturn(recipe);
+        Recipe recipe = Recipe.builder().name("Test").build();
+        when(recipeService.getRecipe(any())).thenReturn(recipe);
 
         mockMvc.perform(MockMvcRequestBuilders.get("/recipes/" + UUID.randomUUID()))
                 .andExpect(MockMvcResultMatchers.status().isOk())
@@ -89,8 +75,8 @@ class RecipeControllerTest {
 
     @Test
     void create_returns201() throws Exception {
-        Recipe recipe = Recipe.builder().name("Manuell").userId(userId).build();
-        when(recipeService.createRecipe(any(), any())).thenReturn(recipe);
+        Recipe recipe = Recipe.builder().name("Manuell").build();
+        when(recipeService.createRecipe(any())).thenReturn(recipe);
 
         mockMvc.perform(MockMvcRequestBuilders.post("/recipes")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -101,8 +87,8 @@ class RecipeControllerTest {
 
     @Test
     void generate_returns201() throws Exception {
-        Recipe recipe = Recipe.builder().name("Gen").userId(userId).build();
-        when(recipeService.generateRecipe(any(), any())).thenReturn(recipe);
+        Recipe recipe = Recipe.builder().name("Gen").build();
+        when(recipeService.generateRecipe(any())).thenReturn(recipe);
 
         mockMvc.perform(MockMvcRequestBuilders.post("/recipes/generate")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -112,8 +98,8 @@ class RecipeControllerTest {
 
     @Test
     void rate_returns200() throws Exception {
-        Recipe recipe = Recipe.builder().name("Gen").userId(userId).build();
-        when(recipeService.rateRecipe(any(), any(), anyDouble())).thenReturn(recipe);
+        Recipe recipe = Recipe.builder().name("Gen").build();
+        when(recipeService.rateRecipe(any(), anyDouble())).thenReturn(recipe);
 
         mockMvc.perform(MockMvcRequestBuilders.post("/recipes/" + UUID.randomUUID() + "/rating")
                         .contentType(MediaType.APPLICATION_JSON)

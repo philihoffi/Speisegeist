@@ -20,8 +20,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Business logic for recipes: generation, search, CRUD, and rating. Every
- * operation is scoped to the requesting user via their id.
+ * Business logic for recipes: generation, search, CRUD, and rating.
  */
 @Service
 @RequiredArgsConstructor
@@ -35,24 +34,21 @@ public class RecipeService {
     private String appVersion;
 
     /**
-     * Generates a new recipe for the user from the given ingredients and preferences.
+     * Generates a new recipe from the given ingredients and preferences.
      *
-     * @param userId  the owning user's id
      * @param request the generation request
      * @return the persisted, generated recipe
      */
     @Transactional
-    public Recipe generateRecipe(UUID userId, RecipeGenerationRequest request) {
+    public Recipe generateRecipe(RecipeGenerationRequest request) {
         Recipe recipe = recipeGeneratorService.generateRecipe(request.ingredients(), request.preferences());
-        recipe.setUserId(userId);
         recipe.setSourceVersion(appVersion);
         return recipeRepository.save(recipe);
     }
 
     /**
-     * Searches the user's recipes by text or tag and returns a page of summaries.
+     * Searches recipes by text or tag and returns a page of summaries.
      *
-     * @param userId the owning user's id
      * @param search optional free-text search
      * @param tag    optional tag filter
      * @param page   zero-based page index
@@ -60,15 +56,15 @@ public class RecipeService {
      * @return a page of recipe summaries
      */
     @Transactional(readOnly = true)
-    public PageResponse<RecipeSummaryResponse> searchRecipes(UUID userId, String search, String tag, int page, int size) {
+    public PageResponse<RecipeSummaryResponse> searchRecipes(String search, String tag, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<Recipe> result;
         if (tag != null && !tag.isBlank()) {
-            result = recipeRepository.findByUserIdAndTag(userId, tag, pageable);
+            result = recipeRepository.findByTag(tag, pageable);
         } else if (search != null && !search.isBlank()) {
-            result = recipeRepository.findByUserIdAndSearch(userId, search, pageable);
+            result = recipeRepository.findBySearch(search, pageable);
         } else {
-            result = recipeRepository.findByUserId(userId, pageable);
+            result = recipeRepository.findAll(pageable);
         }
 
         return new PageResponse<>(
@@ -79,29 +75,26 @@ public class RecipeService {
     }
 
     /**
-     * Returns a recipe by id, verifying ownership.
+     * Returns a recipe by id.
      *
-     * @param userId   the owning user's id
      * @param recipeId the recipe id
      * @return the recipe
      */
     @Transactional(readOnly = true)
-    public Recipe getRecipe(UUID userId, UUID recipeId) {
-        return recipeRepository.findByIdAndUserId(recipeId, userId)
+    public Recipe getRecipe(UUID recipeId) {
+        return recipeRepository.findById(recipeId)
                 .orElseThrow(() -> new RecipeNotFoundException(recipeId));
     }
 
     /**
-     * Creates a manually entered recipe for the user.
+     * Creates a manually entered recipe.
      *
-     * @param userId  the owning user's id
      * @param request the recipe payload
      * @return the persisted recipe
      */
     @Transactional
-    public Recipe createRecipe(UUID userId, RecipeRequest request) {
+    public Recipe createRecipe(RecipeRequest request) {
         Recipe recipe = Recipe.builder()
-                .userId(userId)
                 .sourceType(Recipe.SourceType.MANUAL)
                 .build();
         applyRequest(recipe, request, true);
@@ -109,43 +102,40 @@ public class RecipeService {
     }
 
     /**
-     * Updates an existing recipe owned by the user.
+     * Updates an existing recipe.
      *
-     * @param userId   the owning user's id
      * @param recipeId the recipe id
      * @param request  the recipe payload
      * @return the updated recipe
      */
     @Transactional
-    public Recipe updateRecipe(UUID userId, UUID recipeId, RecipeRequest request) {
-        Recipe recipe = getRecipe(userId, recipeId);
+    public Recipe updateRecipe(UUID recipeId, RecipeRequest request) {
+        Recipe recipe = getRecipe(recipeId);
         applyRequest(recipe, request, false);
         return recipeRepository.save(recipe);
     }
 
     /**
-     * Deletes a recipe owned by the user.
+     * Deletes a recipe.
      *
-     * @param userId   the owning user's id
      * @param recipeId the recipe id
      */
     @Transactional
-    public void deleteRecipe(UUID userId, UUID recipeId) {
-        Recipe recipe = getRecipe(userId, recipeId);
+    public void deleteRecipe(UUID recipeId) {
+        Recipe recipe = getRecipe(recipeId);
         recipeRepository.delete(recipe);
     }
 
     /**
-     * Stores the user's star rating for a recipe.
+     * Stores a star rating for a recipe.
      *
-     * @param userId   the owning user's id
      * @param recipeId the recipe id
      * @param rating   the rating value
      * @return the updated recipe
      */
     @Transactional
-    public Recipe rateRecipe(UUID userId, UUID recipeId, double rating) {
-        Recipe recipe = getRecipe(userId, recipeId);
+    public Recipe rateRecipe(UUID recipeId, double rating) {
+        Recipe recipe = getRecipe(recipeId);
         recipe.setRating(rating);
         return recipeRepository.save(recipe);
     }

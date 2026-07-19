@@ -48,17 +48,14 @@ class RecipeServiceTest {
     @InjectMocks
     private RecipeService recipeService;
 
-    private final UUID userId = UUID.randomUUID();
-
     @Test
-    void generateRecipe_setsUserAndSourceVersion() {
+    void generateRecipe_setsSourceVersion() {
         Recipe generated = Recipe.builder().name("X").build();
         when(recipeGeneratorService.generateRecipe(anyList(), any())).thenReturn(generated);
         when(recipeRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        Recipe saved = recipeService.generateRecipe(userId, new RecipeGenerationRequest(List.of("Tofu"), null));
+        Recipe saved = recipeService.generateRecipe(new RecipeGenerationRequest(List.of("Tofu"), null));
 
-        assertEquals(userId, saved.getUserId());
         assertNotNull(saved.getSourceVersion());
         verify(recipeRepository).save(generated);
     }
@@ -72,12 +69,12 @@ class RecipeServiceTest {
                 .steps(List.of(CookingStep.builder().instruction("s").build()))
                 .tags(Set.of("vegan"))
                 .build();
-        when(recipeRepository.findByIdAndUserId(any(), any())).thenReturn(Optional.of(existing));
+        when(recipeRepository.findById(any())).thenReturn(Optional.of(existing));
         when(recipeRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
         // Only the name is provided (simulates a partial inline edit)
         RecipeRequest patch = new RecipeRequest("New", null, null, null, null, null, null, null, null);
-        Recipe updated = recipeService.updateRecipe(userId, UUID.randomUUID(), patch);
+        Recipe updated = recipeService.updateRecipe(UUID.randomUUID(), patch);
 
         assertEquals("New", updated.getName());
         assertEquals("d", updated.getDescription());
@@ -90,7 +87,7 @@ class RecipeServiceTest {
     @Test
     void updateRecipe_fullRequestReplacesCollections() {
         Recipe existing = Recipe.builder().name("Old").tags(Set.of("vegan")).build();
-        when(recipeRepository.findByIdAndUserId(any(), any())).thenReturn(Optional.of(existing));
+        when(recipeRepository.findById(any())).thenReturn(Optional.of(existing));
         when(recipeRepository.save(any())).thenAnswer(i -> i.getArgument(0));
         when(ingredientService.resolve(any(), any()))
                 .thenAnswer(i -> Ingredient.builder().name(i.getArgument(0)).build());
@@ -99,7 +96,7 @@ class RecipeServiceTest {
                 List.of(new IngredientDto("Tomate", 2.0, "Stück", "Gemüse", null)),
                 List.of(new StepDto(1, "Kochen", 5)),
                 10, 20, 4, 500, Set.of("schnell"));
-        Recipe updated = recipeService.updateRecipe(userId, UUID.randomUUID(), full);
+        Recipe updated = recipeService.updateRecipe(UUID.randomUUID(), full);
 
         assertEquals(1, updated.getIngredients().size());
         assertEquals(1, updated.getSteps().size());
@@ -118,9 +115,8 @@ class RecipeServiceTest {
                 List.of(new StepDto(1, "Anbraten", 5)),
                 null, 15, 2, 450, Set.of("vegan"));
 
-        Recipe created = recipeService.createRecipe(userId, request);
+        Recipe created = recipeService.createRecipe(request);
 
-        assertEquals(userId, created.getUserId());
         assertEquals(Recipe.SourceType.MANUAL, created.getSourceType());
         assertEquals(1, created.getIngredients().size());
         assertEquals(1, created.getSteps().size());
@@ -128,24 +124,24 @@ class RecipeServiceTest {
     }
 
     @Test
-    void getRecipe_throwsWhenNotOwner() {
-        when(recipeRepository.findByIdAndUserId(any(), any())).thenReturn(Optional.empty());
-        assertThrows(RecipeNotFoundException.class, () -> recipeService.getRecipe(userId, UUID.randomUUID()));
+    void getRecipe_throwsWhenNotFound() {
+        when(recipeRepository.findById(any())).thenReturn(Optional.empty());
+        assertThrows(RecipeNotFoundException.class, () -> recipeService.getRecipe(UUID.randomUUID()));
     }
 
     @Test
     void searchRecipes_withTermDelegatesToSearchQuery() {
-        when(recipeRepository.findByUserIdAndSearch(eq(userId), eq("tofu"), any(PageRequest.class)))
+        when(recipeRepository.findBySearch(eq("tofu"), any(PageRequest.class)))
                 .thenReturn(new PageImpl<>(List.of()));
-        recipeService.searchRecipes(userId, "tofu", null, 0, 12);
-        verify(recipeRepository).findByUserIdAndSearch(eq(userId), eq("tofu"), any());
+        recipeService.searchRecipes("tofu", null, 0, 12);
+        verify(recipeRepository).findBySearch(eq("tofu"), any());
     }
 
     @Test
     void searchRecipes_withTagDelegatesToTagQuery() {
-        when(recipeRepository.findByUserIdAndTag(eq(userId), eq("vegan"), any(PageRequest.class)))
+        when(recipeRepository.findByTag(eq("vegan"), any(PageRequest.class)))
                 .thenReturn(new PageImpl<>(List.of()));
-        recipeService.searchRecipes(userId, null, "vegan", 0, 12);
-        verify(recipeRepository).findByUserIdAndTag(eq(userId), eq("vegan"), any());
+        recipeService.searchRecipes(null, "vegan", 0, 12);
+        verify(recipeRepository).findByTag(eq("vegan"), any());
     }
 }

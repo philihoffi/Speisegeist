@@ -1,7 +1,6 @@
-/** A user-owned recipe. */
+/** A recipe. */
 export interface Recipe {
   id: string;
-  userId: string;
   name: string;
   description?: string;
   ingredients: RecipeIngredient[];
