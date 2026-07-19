@@ -3,14 +3,19 @@ package com.philipphofmann.backend.controller;
 import com.philipphofmann.backend.config.JwtAuthenticationFilter.AuthenticatedUser;
 import com.philipphofmann.backend.dto.RecipeDtos.*;
 import com.philipphofmann.backend.entity.Recipe;
+import com.philipphofmann.backend.entity.RecipeImage;
+import com.philipphofmann.backend.service.RecipeImageService;
 import com.philipphofmann.backend.service.RecipeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Duration;
 import java.util.UUID;
 
 @RestController
@@ -19,6 +24,7 @@ import java.util.UUID;
 public class RecipeController {
 
     private final RecipeService recipeService;
+    private final RecipeImageService recipeImageService;
 
     @PostMapping("/generate")
     public ResponseEntity<RecipeResponse> generate(
@@ -43,6 +49,23 @@ public class RecipeController {
             @AuthenticationPrincipal AuthenticatedUser user,
             @PathVariable UUID id) {
         return ResponseEntity.ok(RecipeResponse.from(recipeService.getRecipe(user.userId(), id)));
+    }
+
+    /**
+     * Liefert das Bild des Rezepts aus der DB (wird beim ersten Abruf generiert und gespeichert).
+     */
+    @GetMapping("/{id}/image")
+    public ResponseEntity<byte[]> getImage(
+            @AuthenticationPrincipal AuthenticatedUser user,
+            @PathVariable UUID id) {
+        RecipeImage image = recipeImageService.getOrCreateImage(user.userId(), id);
+        MediaType mediaType = image.getContentType() != null
+                ? MediaType.parseMediaType(image.getContentType())
+                : MediaType.IMAGE_PNG;
+        return ResponseEntity.ok()
+                .contentType(mediaType)
+                .cacheControl(CacheControl.maxAge(Duration.ofDays(30)).cachePrivate())
+                .body(image.getData());
     }
 
     @PostMapping

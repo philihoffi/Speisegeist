@@ -13,6 +13,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
 import { ErrorBannerComponent } from '../../../../shared/components/error-banner/error-banner.component';
+import { RecipeImageComponent } from '../../../../shared/components/recipe-image/recipe-image.component';
 import { ApiService } from '../../../../core/services/api.service';
 import { RecipeService } from '../../../../core/services/recipe.service';
 import { IngredientDraft, Recipe, StepDraft } from '../../../../core/models/recipe.model';
@@ -26,7 +27,7 @@ import {
   selector: 'app-detail',
   standalone: true,
   imports: [
-    CommonModule, FormsModule, HeaderComponent, LoadingSpinnerComponent, ErrorBannerComponent,
+    CommonModule, FormsModule, HeaderComponent, LoadingSpinnerComponent, ErrorBannerComponent, RecipeImageComponent,
     MatCardModule, MatButtonModule, MatIconModule, MatChipsModule,
     MatFormFieldModule, MatInputModule, MatListModule, MatProgressSpinnerModule
   ],

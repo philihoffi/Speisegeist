@@ -30,6 +30,10 @@ export class ApiService {
     return this.http.get<Recipe>(`${this.recipesUrl}/${id}`);
   }
 
+  getRecipeImage(id: string): Observable<Blob> {
+    return this.http.get(`${this.recipesUrl}/${id}/image`, { responseType: 'blob' });
+  }
+
   createRecipe(recipe: Partial<Recipe>): Observable<Recipe> {
     return this.http.post<Recipe>(this.recipesUrl, recipe);
   }

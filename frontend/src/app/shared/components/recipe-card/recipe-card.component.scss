@@ -29,6 +29,13 @@
   }
 }
 
+.card-image {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: var(--radius-md, 12px) var(--radius-md, 12px) 0 0;
+}
+
 .meta {
   display: flex;
   flex-wrap: wrap;

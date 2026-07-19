@@ -1,4 +1,7 @@
 <mat-card class="recipe-card" (click)="open()">
+  <div class="card-image">
+    <app-recipe-image [recipeId]="recipe.id" [alt]="recipe.name"></app-recipe-image>
+  </div>
   <mat-card-header>
     <mat-card-title>{{ recipe.name }}</mat-card-title>
     @if (recipe.description) {

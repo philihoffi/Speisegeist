@@ -1,0 +1,11 @@
+@if (loading()) {
+  <div class="recipe-image recipe-image--loading" [class.recipe-image--failed]="failed()">
+    <mat-spinner diameter="32"></mat-spinner>
+  </div>
+} @else if (imageUrl(); as url) {
+  <img class="recipe-image" [src]="url" [alt]="alt" loading="lazy">
+} @else {
+  <div class="recipe-image recipe-image--placeholder" [class.recipe-image--failed]="failed()">
+    <mat-icon>restaurant</mat-icon>
+  </div>
+}

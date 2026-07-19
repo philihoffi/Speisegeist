@@ -20,8 +20,33 @@ public interface OpenRouterService {
      */
     String complete(String systemPrompt, List<Message> messages, Object responseFormat);
 
+    /**
+     * Generiert ein Bild über die OpenRouter Images-API (OpenAI-kompatibel) und lädt
+     * die Bild-Bytes gleich herunter, damit sie unabhängig von der kurzlebigen
+     * Provider-URL persistiert werden können.
+     *
+     * @param prompt    Beschreibung des gewünschten Bildes
+     * @param size      Zielgröße im Format "WIDTHxHEIGHT" (z. B. "1024x1024"),
+     *                  oder {@code null} für die Modell-Standardgröße
+     * @param n         Anzahl der zu erzeugenden Bilder (typischerweise 1)
+     * @return die Roh-Bytes und der Content-Type des ersten Bildes
+     */
+    GeneratedImage generateImage(String prompt, String size, Integer n);
+
     /** Das konfigurierte Modell (z. B. für Provenienz-Metadaten). */
     String getModel();
+
+    /** Das konfigurierte Bildgenerierungs-Modell. */
+    String getImageModel();
+
+    /**
+     * Ein fertig heruntergeladenes Bild.
+     *
+     * @param data      die Roh-Bytes des Bildes
+     * @param mediaType der MIME-Typ (z. B. {@code image/png}); {@code null} falls unbekannt
+     */
+    record GeneratedImage(byte[] data, String mediaType) {
+    }
 
     /** Eine Chat-Nachricht (role/content) im OpenRouter-Format. */
     record Message(String role, String content) {

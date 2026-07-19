@@ -5,11 +5,12 @@ import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { Recipe } from '../../../core/models/recipe.model';
+import { RecipeImageComponent } from '../recipe-image/recipe-image.component';
 
 @Component({
   selector: 'app-recipe-card',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatChipsModule, MatIconModule],
+  imports: [CommonModule, MatCardModule, MatChipsModule, MatIconModule, RecipeImageComponent],
   templateUrl: './recipe-card.component.html',
   styleUrl: './recipe-card.component.scss'
 })

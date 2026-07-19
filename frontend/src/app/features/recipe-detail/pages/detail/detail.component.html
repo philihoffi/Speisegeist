@@ -2,6 +2,10 @@
 @if (recipe(); as recipe) {
   <div class="detail">
     @if (!editing()) {
+      <div class="hero-image">
+        <app-recipe-image [recipeId]="recipe.id" [alt]="recipe.name"></app-recipe-image>
+      </div>
+
       <div class="title-row">
         <h1>{{ recipe.name }}</h1>
         <div class="actions">

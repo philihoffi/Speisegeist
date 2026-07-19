@@ -5,8 +5,11 @@ import com.philipphofmann.backend.exception.RecipeGenerationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -25,15 +28,124 @@ public class OpenRouterServiceImpl implements OpenRouterService {
 
     private final RestClient openRouterRestClient;
 
+    /**
+     * Header-loser Client zum Herunterladen der generierten Bild-Bytes von der
+     * Provider-URL (kein OpenRouter-{@code Authorization}-Header, s. {@link #downloadImage}).
+     */
+    private final RestClient imageDownloadRestClient = RestClient.create();
+
     @Value("${openrouter.model:openai/gpt-4o-mini}")
     private String model;
 
     @Value("${openrouter.max-tokens:2000}")
     private int maxTokens;
 
+    @Value("${openrouter.image-model:openai/dall-e-3}")
+    private String imageModel;
+
     @Override
     public String getModel() {
         return model;
+    }
+
+    @Override
+    public String getImageModel() {
+        return imageModel;
+    }
+
+    @Override
+    public GeneratedImage generateImage(String prompt, String size, Integer n) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("model", imageModel);
+        body.put("prompt", prompt);
+        if (size != null && !size.isBlank()) {
+            body.put("size", size);
+        }
+        if (n != null && n > 0) {
+            body.put("n", n);
+        }
+
+        JsonNode response = openRouterRestClient.post()
+                .uri("/images/generations")
+                .body(body)
+                .retrieve()
+                .body(JsonNode.class);
+
+        if (response == null) {
+            throw new RecipeGenerationException("Leere Antwort von OpenRouter (Bildgenerierung)");
+        }
+
+        JsonNode topError = response.path("error");
+        if (topError.isObject()) {
+            log.warn("OpenRouter-Fehlerantwort (Bildgenerierung): {}", response);
+            String message = topError.path("message").asText("unbekannter Fehler");
+            throw new RecipeGenerationException("OpenRouter-Fehler bei der Bildgenerierung: " + message);
+        }
+
+        JsonNode data = response.path("data");
+        if (data.isMissingNode() || !data.isArray() || data.isEmpty()) {
+            throw new RecipeGenerationException("Keine Bilddaten von OpenRouter erhalten");
+        }
+
+        JsonNode image = data.get(0);
+
+        // OpenRouter/image-Modelle liefern entweder eine kurzlebige "url" oder
+        // direkt base64-kodiertes "b64_json" (z. B. openai/gpt-image). Beide Fälle
+        // unterstützen, damit kein Modell wegen eines nicht unterstützten Formats
+        // mit einem Fehler abbricht.
+        JsonNode url = image.path("url");
+        if (!url.isMissingNode() && !url.asText().isBlank()) {
+            log.debug("OpenRouter Bildgenerierung: model={}, size={}, url_length={}",
+                    imageModel, size, url.asText().length());
+            return downloadImage(url.asText());
+        }
+
+        JsonNode b64 = image.path("b64_json");
+        if (!b64.isMissingNode() && !b64.asText().isBlank()) {
+            byte[] bytes;
+            try {
+                bytes = java.util.Base64.getDecoder().decode(b64.asText());
+            } catch (IllegalArgumentException e) {
+                throw new RecipeGenerationException("Bild (b64_json) konnte nicht dekodiert werden", e);
+            }
+            if (bytes.length == 0) {
+                throw new RecipeGenerationException("Bild (b64_json) ist leer");
+            }
+            // gpt-image liefert PNG; andere Modelle ggf. anpassen.
+            log.debug("OpenRouter Bildgenerierung: model={}, size={}, b64_bytes={}",
+                    imageModel, size, bytes.length);
+            return new GeneratedImage(bytes, MediaType.IMAGE_PNG_VALUE);
+        }
+
+        throw new RecipeGenerationException(
+                "OpenRouter lieferte weder eine Bild-URL noch b64_json");
+    }
+
+    /**
+     * Lädt die Bild-Bytes von der (kurzlebigen) Provider-URL herunter. Bewusst mit einem
+     * eigenen, header-losen {@link RestClient}: die URL zeigt auf einen Drittanbieter-Storage,
+     * dem der OpenRouter-{@code Authorization}-Header nicht mitgegeben werden darf.
+     */
+    private GeneratedImage downloadImage(String url) {
+        try {
+            ResponseEntity<byte[]> entity = imageDownloadRestClient.get()
+                    .uri(java.net.URI.create(url))
+                    .retrieve()
+                    .toEntity(byte[].class);
+
+            byte[] bytes = entity.getBody();
+            if (bytes == null || bytes.length == 0) {
+                throw new RecipeGenerationException("Heruntergeladenes Bild ist leer");
+            }
+
+            MediaType contentType = entity.getHeaders().getContentType();
+            String mediaType = contentType != null ? contentType.toString() : MediaType.IMAGE_PNG_VALUE;
+
+            log.debug("Bild heruntergeladen: bytes={}, contentType={}", bytes.length, mediaType);
+            return new GeneratedImage(bytes, mediaType);
+        } catch (RestClientException e) {
+            throw new RecipeGenerationException("Bild konnte nicht heruntergeladen werden: " + e.getMessage(), e);
+        }
     }
 
     @Override
