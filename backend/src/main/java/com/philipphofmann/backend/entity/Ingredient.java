@@ -35,6 +35,9 @@ public class Ingredient {
     @Column(length = 100)
     private String warengruppe;
 
+    @Column(name = "normalized_name", nullable = false, length = 255)
+    private String normalizedName;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

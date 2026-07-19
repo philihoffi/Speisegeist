@@ -17,8 +17,8 @@ import java.util.UUID;
 @Repository
 public interface IngredientRepository extends JpaRepository<Ingredient, UUID> {
 
-    /** Finds a catalog ingredient regardless of letter case. */
-    Optional<Ingredient> findByNameIgnoreCase(String name);
+    /** Finds a catalog ingredient by its normalized name (exact match). */
+    Optional<Ingredient> findByNormalizedName(String normalizedName);
 
     /** Returns all ingredients ordered by name ascending, paged. */
     Page<Ingredient> findAllByOrderByNameAsc(Pageable pageable);
@@ -32,4 +32,13 @@ public interface IngredientRepository extends JpaRepository<Ingredient, UUID> {
     /** Returns all distinct warengruppen present in the catalog, ordered alphabetically. */
     @Query("select distinct i.warengruppe from Ingredient i where i.warengruppe is not null order by i.warengruppe")
     List<String> findDistinctWarengruppen();
+
+    /** Returns ingredients with a similar normalized name (pg_trgm similarity). */
+    @Query(value = """
+            SELECT * FROM ingredients
+            WHERE similarity(normalized_name, :normalized) > :threshold
+            ORDER BY similarity(normalized_name, :normalized) DESC
+            LIMIT 5
+            """, nativeQuery = true)
+    List<Ingredient> findSimilarNormalized(String normalized, float threshold);
 }
