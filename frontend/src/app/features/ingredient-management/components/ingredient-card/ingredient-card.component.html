@@ -1,0 +1,56 @@
+<div class="card-image" aria-hidden="true">
+  <app-ingredient-image [ingredientId]="ingredient.id" [alt]="ingredient.name"></app-ingredient-image>
+</div>
+
+<article class="ingredient-card" [class.ingredient-card--editing]="isEditing">
+  @if (isEditing) {
+    <div class="ingredient-card__fields">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <input matInput [(ngModel)]="editName" maxlength="255"
+               (keyup.enter)="onSave()" aria-label="Name">
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <input matInput [(ngModel)]="editWarengruppe" maxlength="100"
+               (keyup.enter)="onSave()" aria-label="Warengruppe"
+               [matAutocomplete]="editWarengruppeAuto">
+        <mat-autocomplete #editWarengruppeAuto="matAutocomplete">
+          @for (gruppe of warengruppen; track gruppe) {
+            <mat-option [value]="gruppe">{{ gruppe }}</mat-option>
+          }
+        </mat-autocomplete>
+      </mat-form-field>
+    </div>
+    <div class="ingredient-card__actions">
+      <button mat-icon-button color="primary" (click)="onSave()"
+              [disabled]="!editName.trim() || saving" aria-label="Speichern">
+        <mat-icon>check</mat-icon>
+      </button>
+      <button mat-icon-button (click)="onCancel()" aria-label="Abbrechen">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  } @else {
+    <div class="ingredient-card__main">
+      <div class="ingredient-card__body">
+        <span class="ingredient-card__name">{{ ingredient.name }}</span>
+        @if (ingredient.warengruppe) {
+          <span class="warengruppe-pill">{{ ingredient.warengruppe }}</span>
+        } @else {
+          <span class="no-warengruppe">Keine Gruppe</span>
+        }
+      </div>
+    </div>
+    <div class="ingredient-card__meta">
+      <mat-icon class="ingredient-card__cal" aria-hidden="true">event</mat-icon>
+      <span>{{ ingredient.createdAt | date:'dd.MM.yyyy' }}</span>
+    </div>
+    <div class="ingredient-card__actions">
+      <button mat-icon-button (click)="onEdit()" aria-label="Bearbeiten">
+        <mat-icon>edit</mat-icon>
+      </button>
+      <button mat-icon-button class="delete-btn" (click)="onRemove()" aria-label="Löschen">
+        <mat-icon>delete</mat-icon>
+      </button>
+    </div>
+  }
+</article>

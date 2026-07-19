@@ -7,8 +7,16 @@
       <div class="ingredient-input">
         <mat-form-field appearance="outline" class="grow">
           <mat-label>Zutat hinzufügen</mat-label>
-          <input matInput [(ngModel)]="ingredientInput" (keyup.enter)="addIngredient()"
-                 placeholder="z.B. Tofu, Tomaten, Zwiebeln">
+          <input matInput [ngModel]="ingredientInput" (ngModelChange)="onIngredientInputChange($event)"
+                 (keyup.enter)="addIngredient()"
+                 placeholder="z.B. Tofu, Tomaten, Zwiebeln"
+                 [matAutocomplete]="ingredientAuto">
+          <mat-autocomplete #ingredientAuto="matAutocomplete"
+                            (optionSelected)="onSuggestionSelected($event.option.value)">
+            @for (suggestion of suggestions(); track suggestion) {
+              <mat-option [value]="suggestion">{{ suggestion }}</mat-option>
+            }
+          </mat-autocomplete>
         </mat-form-field>
         <button mat-icon-button color="primary" (click)="addIngredient()" [disabled]="!ingredientInput.trim()">
           <mat-icon>add</mat-icon>

@@ -1,0 +1,132 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--sg-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  background: var(--sg-surface);
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s ease;
+
+  &:hover {
+    transform: translateY(-6px) rotate(-0.6deg);
+    box-shadow: var(--shadow-md);
+  }
+}
+
+.card-image {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.ingredient-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  flex: 1;
+
+  &__main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  &__name {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--sg-ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--sg-ink-soft);
+    font-size: 0.8rem;
+    white-space: nowrap;
+
+    .ingredient-card__cal {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  &__actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+
+  &--editing {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+  }
+
+  &--editing &__fields {
+    display: flex;
+    flex: 1;
+    gap: 12px;
+    min-width: 240px;
+
+    mat-form-field {
+      flex: 1;
+    }
+  }
+}
+
+.warengruppe-pill {
+  display: inline-block;
+  background: var(--sg-surface-2);
+  color: var(--sg-primary-strong);
+  font-weight: 600;
+  font-size: 0.8rem;
+  border-radius: var(--radius-pill);
+  padding: 2px 12px;
+  width: fit-content;
+}
+
+.no-warengruppe {
+  color: var(--sg-ink-soft);
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+.delete-btn {
+  color: var(--sg-danger-text);
+}
+
+@media (max-width: 420px) {
+  .ingredient-card {
+    flex-wrap: wrap;
+  }
+
+  .ingredient-card__meta {
+    order: 3;
+  }
+
+  .ingredient-card__actions {
+    order: 2;
+    margin-left: auto;
+  }
+}

@@ -1,0 +1,11 @@
+@if (loading()) {
+  <div class="image image--loading" [class.image--failed]="failed()">
+    <mat-spinner diameter="32"></mat-spinner>
+  </div>
+} @else if (imageUrl(); as url) {
+  <img class="image" [src]="url" [alt]="alt" loading="lazy">
+} @else {
+  <div class="image image--placeholder" [class.image--failed]="failed()">
+    <mat-icon>eco</mat-icon>
+  </div>
+}

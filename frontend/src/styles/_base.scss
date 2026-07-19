@@ -35,13 +35,16 @@ h2 { font-size: 1.35rem; }
 .library,
 .generator,
 .manual,
-.detail {
+.detail,
+.ingredients-page {
   position: relative;
   background: var(--sg-surface);
   border: 1px solid var(--sg-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
   margin: 28px auto !important;
+  width: calc(100% - 56px);
+  max-width: 2400px;
 }
 
 // Generator & manual wrap their form in a card inside the shell — flatten it

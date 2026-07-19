@@ -42,6 +42,11 @@ export const routes: Routes = [
     ]
   },
   {
+    path: 'ingredients',
+    canActivate: [AuthGuard],
+    loadComponent: () => import('./features/ingredient-management/pages/ingredients/ingredients.component').then(m => m.IngredientsComponent)
+  },
+  {
     path: '',
     loadComponent: () => import('./features/dashboard/pages/dashboard/dashboard.component').then(m => m.DashboardComponent),
     canActivate: [AuthGuard]

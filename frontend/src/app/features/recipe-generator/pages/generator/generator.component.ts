@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -9,14 +9,19 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatSelectModule } from '@angular/material/select';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { Subject, Subscription, of } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, map, switchMap } from 'rxjs/operators';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { ErrorBannerComponent } from '../../../../shared/components/error-banner/error-banner.component';
 import { RecipeService } from '../../../../core/services/recipe.service';
+import { IngredientService } from '../../../../core/services/ingredient.service';
 
 /**
  * Recipe generator page: collects ingredients and optional preferences, then
- * requests an AI-generated recipe and navigates to its detail page.
+ * requests an AI-generated recipe and navigates to its detail page. The
+ * ingredient input offers autocomplete suggestions from the global catalog.
  */
 @Component({
   selector: 'app-generator',
@@ -24,19 +29,69 @@ import { RecipeService } from '../../../../core/services/recipe.service';
   imports: [
     CommonModule, FormsModule, HeaderComponent, ErrorBannerComponent,
     MatCardModule, MatFormFieldModule, MatInputModule, MatButtonModule,
-    MatIconModule, MatChipsModule, MatSelectModule, MatProgressSpinnerModule
+    MatIconModule, MatChipsModule, MatSelectModule, MatAutocompleteModule,
+    MatProgressSpinnerModule
   ],
   templateUrl: './generator.component.html',
   styleUrl: './generator.component.scss'
 })
-export class GeneratorComponent {
+export class GeneratorComponent implements OnInit, OnDestroy {
   ingredientInput = '';
   ingredients: string[] = [];
   cuisine = '';
   cookTime: number | null = null;
   servings = 2;
 
-  constructor(public recipeService: RecipeService, private router: Router) {}
+  // Zoneless: filled inside the HTTP subscribe callback, hence a signal.
+  suggestions = signal<string[]>([]);
+
+  private suggestionInput$ = new Subject<string>();
+  private subscriptions = new Subscription();
+
+  constructor(
+    public recipeService: RecipeService,
+    private ingredientService: IngredientService,
+    private router: Router
+  ) {}
+
+  /** Wires the debounced catalog search feeding the autocomplete suggestions. */
+  ngOnInit(): void {
+    this.subscriptions.add(
+      this.suggestionInput$.pipe(
+        debounceTime(250),
+        distinctUntilChanged(),
+        switchMap(term => {
+          if (!term.trim()) return of([] as string[]);
+          return this.ingredientService.searchIngredients({ search: term.trim(), size: 8 }).pipe(
+            map(page => page.content.map(i => i.name)),
+            catchError(() => of([] as string[]))
+          );
+        })
+      ).subscribe(names => {
+        this.suggestions.set(names.filter(name => !this.ingredients.includes(name)));
+      })
+    );
+  }
+
+  /** Cleans up subscriptions when the component is destroyed. */
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
+  }
+
+  /** Tracks the ingredient input and requests matching catalog suggestions. */
+  onIngredientInputChange(value: string): void {
+    this.ingredientInput = value;
+    this.suggestionInput$.next(value);
+  }
+
+  /** Adds an autocomplete suggestion as ingredient and clears the input. */
+  onSuggestionSelected(name: string): void {
+    if (name && !this.ingredients.includes(name)) {
+      this.ingredients.push(name);
+    }
+    this.ingredientInput = '';
+    this.suggestions.set([]);
+  }
 
   /** Adds the trimmed ingredient input to the ingredient list, ignoring duplicates. */
   addIngredient(): void {
@@ -45,6 +100,7 @@ export class GeneratorComponent {
       this.ingredients.push(value);
     }
     this.ingredientInput = '';
+    this.suggestions.set([]);
   }
 
   /** Removes the ingredient at the given index. */
