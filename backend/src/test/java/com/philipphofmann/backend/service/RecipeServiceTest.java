@@ -39,7 +39,7 @@ class RecipeServiceTest {
     private RecipeRepository recipeRepository;
 
     @Mock
-    private OpenRouterIntegrationService openRouterService;
+    private RecipeGeneratorService recipeGeneratorService;
 
     @InjectMocks
     private RecipeService recipeService;
@@ -49,7 +49,7 @@ class RecipeServiceTest {
     @Test
     void generateRecipe_setsUserAndSourceVersion() {
         Recipe generated = Recipe.builder().name("X").build();
-        when(openRouterService.generateRecipe(anyList(), any())).thenReturn(generated);
+        when(recipeGeneratorService.generateRecipe(anyList(), any())).thenReturn(generated);
         when(recipeRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
         Recipe saved = recipeService.generateRecipe(userId, new RecipeGenerationRequest(List.of("Tofu"), null));

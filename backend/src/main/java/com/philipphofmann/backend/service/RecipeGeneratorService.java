@@ -13,7 +13,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.ResourceAccessException;
-import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 
 import java.time.LocalDateTime;
@@ -24,22 +23,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Orchestriert die Rezept-Generierung: baut die Prompts, ruft
+ * {@link OpenRouterService} mit Retry/Backoff auf und mappt das KI-JSON auf
+ * eine {@link Recipe}-Entität.
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class OpenRouterIntegrationService {
+public class RecipeGeneratorService {
 
-    private final RestClient openRouterRestClient;
+    private final OpenRouterService openRouterService;
     private final ObjectMapper objectMapper;
-
-    @Value("${openrouter.model:openai/gpt-4o-mini}")
-    private String model;
 
     @Value("${openrouter.api.retry-max-attempts:3}")
     private int maxAttempts;
-
-    @Value("${openrouter.max-tokens:2000}")
-    private int maxTokens;
 
     // Das Antwortformat wird bereits per json_schema (response_format) erzwungen.
     // Dieser Prompt steuert daher nur Inhalt und Qualität, nicht die Struktur.
@@ -82,8 +80,8 @@ public class OpenRouterIntegrationService {
 
     /**
      * Erzwingt via OpenRouter Structured Outputs, dass die KI ausschließlich JSON
-     * exakt in der vom Parser erwarteten Struktur liefert (strict = alle Felder
-     * required, keine zusätzlichen Properties).
+     * im Rezept-Schema liefert (strict = alle Felder required, keine zusätzlichen
+     * Properties).
      */
     private static final Map<String, Object> RESPONSE_FORMAT = buildResponseFormat();
 
@@ -155,7 +153,10 @@ public class OpenRouterIntegrationService {
         RestClientResponseException lastError = null;
         for (int attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
-                String content = callOpenRouter(userPrompt);
+                String content = openRouterService.complete(
+                        SYSTEM_PROMPT,
+                        List.of(OpenRouterService.Message.user(userPrompt)),
+                        RESPONSE_FORMAT);
                 return parseRecipeJson(content);
             } catch (RestClientResponseException e) {
                 lastError = e;
@@ -178,63 +179,6 @@ public class OpenRouterIntegrationService {
                     "OpenRouter-Anfrage fehlgeschlagen: " + lastError.getStatusCode(), lastError);
         }
         throw new OpenRouterUnavailableException("OpenRouter nicht erreichbar");
-    }
-
-    private String callOpenRouter(String userPrompt) {
-        Map<String, Object> body = Map.of(
-                "model", model,
-                "messages", List.of(
-                        Map.of("role", "system", "content", SYSTEM_PROMPT),
-                        Map.of("role", "user", "content", userPrompt)),
-                "response_format", RESPONSE_FORMAT,
-                "max_tokens", maxTokens,
-                // Nur Provider zulassen, die response_format/json_schema wirklich unterstützen,
-                // sonst routet OpenRouter ggf. an eine Instanz, die den Parameter ignoriert/ablehnt
-                // (Folge: finish_reason=error). Siehe openrouter.ai/docs/features/structured-outputs
-                "provider", Map.of("require_parameters", true));
-
-        JsonNode response = openRouterRestClient.post()
-                .uri("/chat/completions")
-                .body(body)
-                .retrieve()
-                .body(JsonNode.class);
-
-        if (response == null) {
-            throw new RecipeGenerationException("Leere Antwort von OpenRouter");
-        }
-
-        // OpenRouter meldet Provider-Fehler entweder top-level oder pro Choice als error-Objekt,
-        // oft zusammen mit HTTP 200 und finish_reason=error.
-        JsonNode choice = response.path("choices").get(0);
-        JsonNode topError = response.path("error");
-        JsonNode choiceError = choice != null ? choice.path("error") : null;
-        String finishReason = choice != null ? choice.path("finish_reason").asText("") : "";
-
-        if (topError.isObject() || (choiceError != null && choiceError.isObject()) || "error".equals(finishReason)) {
-            log.warn("OpenRouter-Fehlerantwort: {}", response);
-            JsonNode err = topError.isObject() ? topError : choiceError;
-            String message = err != null ? err.path("message").asText("unbekannter Fehler") : "unbekannter Fehler";
-            throw new RecipeGenerationException(
-                    "OpenRouter/Provider-Fehler bei der Generierung (finish_reason=" + finishReason + "): " + message);
-        }
-
-        if (choice == null) {
-            throw new RecipeGenerationException("Leere Antwort von OpenRouter");
-        }
-
-        String content = choice.path("message").path("content").asText();
-
-        log.debug("OpenRouter finish_reason={}, completion_tokens={}, content_length={}",
-                finishReason,
-                response.path("usage").path("completion_tokens").asInt(-1),
-                content.length());
-
-        if ("length".equals(finishReason)) {
-            throw new RecipeGenerationException(
-                    "KI-Antwort wurde durch das Token-Limit abgeschnitten (max_tokens=" + maxTokens
-                            + "). Erhöhe openrouter.max-tokens.");
-        }
-        return content;
     }
 
     private Recipe parseRecipeJson(String content) {
@@ -275,6 +219,8 @@ public class OpenRouterIntegrationService {
 
             Set<String> tags = new HashSet<>();
             node.path("tags").forEach(t -> tags.add(t.asText()));
+
+            String model = openRouterService.getModel();
 
             return Recipe.builder()
                     .name(node.path("name").asText())

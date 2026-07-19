@@ -24,14 +24,14 @@ import java.util.UUID;
 public class RecipeService {
 
     private final RecipeRepository recipeRepository;
-    private final OpenRouterIntegrationService openRouterService;
+    private final RecipeGeneratorService recipeGeneratorService;
 
     @Value("${app.version:1.0}")
     private String appVersion;
 
     @Transactional
     public Recipe generateRecipe(UUID userId, RecipeGenerationRequest request) {
-        Recipe recipe = openRouterService.generateRecipe(request.ingredients(), request.preferences());
+        Recipe recipe = recipeGeneratorService.generateRecipe(request.ingredients(), request.preferences());
         recipe.setUserId(userId);
         recipe.setSourceVersion(appVersion);
         return recipeRepository.save(recipe);
