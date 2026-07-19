@@ -19,6 +19,7 @@ import org.springframework.web.client.RestClientResponseException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -31,11 +32,14 @@ public class OpenRouterIntegrationService {
     private final RestClient openRouterRestClient;
     private final ObjectMapper objectMapper;
 
-    @Value("${openrouter.model:mistralai/mistral-small-3.1-24b-instruct}")
+    @Value("${openrouter.model:openai/gpt-4o-mini}")
     private String model;
 
     @Value("${openrouter.api.retry-max-attempts:3}")
     private int maxAttempts;
+
+    @Value("${openrouter.max-tokens:2000}")
+    private int maxTokens;
 
     private static final String SYSTEM_PROMPT = """
             Du bist ein Koch-Assistent für vegane Küche. Erzeuge aus den gegebenen Zutaten \
@@ -52,6 +56,75 @@ public class OpenRouterIntegrationService {
               "tags": ["vegan", "schnell"]
             }
             Alle Texte auf Deutsch. Nährwerte sind Schätzungen.""";
+
+    /**
+     * Erzwingt via OpenRouter Structured Outputs, dass die KI ausschließlich JSON
+     * exakt in der vom Parser erwarteten Struktur liefert (strict = alle Felder
+     * required, keine zusätzlichen Properties).
+     */
+    private static final Map<String, Object> RESPONSE_FORMAT = buildResponseFormat();
+
+    private static Map<String, Object> buildResponseFormat() {
+        Map<String, Object> ingredientProps = orderedMap(
+                "name", type("string"),
+                "quantity", nullable("number"),
+                "unit", nullable("string"),
+                "warengruppe", nullable("string"),
+                "notes", nullable("string"));
+
+        Map<String, Object> stepProps = orderedMap(
+                "stepNumber", type("integer"),
+                "instruction", type("string"),
+                "durationMinutes", nullable("integer"));
+
+        Map<String, Object> recipeProps = orderedMap(
+                "name", type("string"),
+                "description", nullable("string"),
+                "ingredients", array(object(ingredientProps)),
+                "steps", array(object(stepProps)),
+                "preparationTimeMinutes", nullable("integer"),
+                "cookTimeMinutes", nullable("integer"),
+                "servings", type("integer"),
+                "estimatedKcal", nullable("integer"),
+                "tags", array(type("string")));
+
+        return Map.of(
+                "type", "json_schema",
+                "json_schema", Map.of(
+                        "name", "recipe",
+                        "strict", true,
+                        "schema", object(recipeProps)));
+    }
+
+    private static Map<String, Object> type(String jsonType) {
+        return Map.of("type", jsonType);
+    }
+
+    private static Map<String, Object> nullable(String jsonType) {
+        return Map.of("type", List.of(jsonType, "null"));
+    }
+
+    private static Map<String, Object> array(Map<String, Object> items) {
+        return Map.of("type", "array", "items", items);
+    }
+
+    /** Objekt-Schema im strict-Modus: additionalProperties=false, alle Keys required. */
+    private static Map<String, Object> object(Map<String, Object> properties) {
+        return Map.of(
+                "type", "object",
+                "additionalProperties", false,
+                "required", List.copyOf(properties.keySet()),
+                "properties", properties);
+    }
+
+    /** Wie {@link Map#of} aber mit stabiler Einfüge-Reihenfolge (für {@code required}). */
+    private static Map<String, Object> orderedMap(Object... keyValues) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        for (int i = 0; i < keyValues.length; i += 2) {
+            map.put((String) keyValues[i], keyValues[i + 1]);
+        }
+        return map;
+    }
 
     public Recipe generateRecipe(List<String> ingredients, GenerationPreferences preferences) {
         String userPrompt = buildUserPrompt(ingredients, preferences);
@@ -89,7 +162,13 @@ public class OpenRouterIntegrationService {
                 "model", model,
                 "messages", List.of(
                         Map.of("role", "system", "content", SYSTEM_PROMPT),
-                        Map.of("role", "user", "content", userPrompt)));
+                        Map.of("role", "user", "content", userPrompt)),
+                "response_format", RESPONSE_FORMAT,
+                "max_tokens", maxTokens,
+                // Nur Provider zulassen, die response_format/json_schema wirklich unterstützen,
+                // sonst routet OpenRouter ggf. an eine Instanz, die den Parameter ignoriert/ablehnt
+                // (Folge: finish_reason=error). Siehe openrouter.ai/docs/features/structured-outputs
+                "provider", Map.of("require_parameters", true));
 
         JsonNode response = openRouterRestClient.post()
                 .uri("/chat/completions")
@@ -97,10 +176,42 @@ public class OpenRouterIntegrationService {
                 .retrieve()
                 .body(JsonNode.class);
 
-        if (response == null || response.path("choices").isEmpty()) {
+        if (response == null) {
             throw new RecipeGenerationException("Leere Antwort von OpenRouter");
         }
-        return response.path("choices").get(0).path("message").path("content").asText();
+
+        // OpenRouter meldet Provider-Fehler entweder top-level oder pro Choice als error-Objekt,
+        // oft zusammen mit HTTP 200 und finish_reason=error.
+        JsonNode choice = response.path("choices").get(0);
+        JsonNode topError = response.path("error");
+        JsonNode choiceError = choice != null ? choice.path("error") : null;
+        String finishReason = choice != null ? choice.path("finish_reason").asText("") : "";
+
+        if (topError.isObject() || (choiceError != null && choiceError.isObject()) || "error".equals(finishReason)) {
+            log.warn("OpenRouter-Fehlerantwort: {}", response);
+            JsonNode err = topError.isObject() ? topError : choiceError;
+            String message = err != null ? err.path("message").asText("unbekannter Fehler") : "unbekannter Fehler";
+            throw new RecipeGenerationException(
+                    "OpenRouter/Provider-Fehler bei der Generierung (finish_reason=" + finishReason + "): " + message);
+        }
+
+        if (choice == null) {
+            throw new RecipeGenerationException("Leere Antwort von OpenRouter");
+        }
+
+        String content = choice.path("message").path("content").asText();
+
+        log.debug("OpenRouter finish_reason={}, completion_tokens={}, content_length={}",
+                finishReason,
+                response.path("usage").path("completion_tokens").asInt(-1),
+                content.length());
+
+        if ("length".equals(finishReason)) {
+            throw new RecipeGenerationException(
+                    "KI-Antwort wurde durch das Token-Limit abgeschnitten (max_tokens=" + maxTokens
+                            + "). Erhöhe openrouter.max-tokens.");
+        }
+        return content;
     }
 
     private Recipe parseRecipeJson(String content) {
