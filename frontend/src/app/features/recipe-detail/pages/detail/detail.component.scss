@@ -55,8 +55,99 @@
   color: rgba(0, 0, 0, 0.5);
 }
 
-.loading {
+.source-info {
   display: flex;
-  justify-content: center;
-  padding: 64px;
+  align-items: center;
+  gap: 6px;
+  color: rgba(0, 0, 0, 0.5);
+  font-size: 0.85rem;
+  margin-bottom: 8px;
+}
+
+.edit-form {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 16px;
+
+  h2 {
+    margin: 20px 0 12px;
+    font-size: 1.05rem;
+  }
+}
+
+.full-width {
+  width: 100%;
+}
+
+.meta-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.tag-input {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+
+  .grow {
+    flex: 1;
+  }
+}
+
+.tags {
+  margin-bottom: 8px;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ingredient-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1.5fr auto;
+  gap: 8px;
+  align-items: baseline;
+
+  @media (max-width: 599px) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.step-row {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+
+  .step-number {
+    font-weight: 500;
+    padding-top: 16px;
+    min-width: 20px;
+  }
+
+  .step-instruction {
+    flex: 1;
+  }
+
+  .step-duration {
+    width: 90px;
+  }
+}
+
+.add-row-btn {
+  align-self: flex-start;
+  margin: 8px 0 4px;
+
+  mat-icon {
+    margin-right: 4px;
+  }
+}
+
+.edit-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
 }

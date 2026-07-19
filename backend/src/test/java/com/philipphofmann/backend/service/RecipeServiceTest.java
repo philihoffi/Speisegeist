@@ -101,6 +101,24 @@ class RecipeServiceTest {
     }
 
     @Test
+    void createRecipe_manualRequestBuildsCompleteEntity() {
+        when(recipeRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        RecipeRequest request = new RecipeRequest("Tofu-Pfanne", "Schnell",
+                List.of(new IngredientDto("Tofu", 200.0, "g", "Kühlregal", null)),
+                List.of(new StepDto(1, "Anbraten", 5)),
+                null, 15, 2, 450, Set.of("vegan"));
+
+        Recipe created = recipeService.createRecipe(userId, request);
+
+        assertEquals(userId, created.getUserId());
+        assertEquals(Recipe.SourceType.MANUAL, created.getSourceType());
+        assertEquals(1, created.getIngredients().size());
+        assertEquals(1, created.getSteps().size());
+        assertEquals(Set.of("vegan"), created.getTags());
+    }
+
+    @Test
     void getRecipe_throwsWhenNotOwner() {
         when(recipeRepository.findByIdAndUserId(any(), any())).thenReturn(Optional.empty());
         assertThrows(RecipeNotFoundException.class, () -> recipeService.getRecipe(userId, UUID.randomUUID()));

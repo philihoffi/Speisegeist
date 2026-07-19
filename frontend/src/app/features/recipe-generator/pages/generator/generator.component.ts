@@ -11,13 +11,14 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
+import { ErrorBannerComponent } from '../../../../shared/components/error-banner/error-banner.component';
 import { RecipeService } from '../../../../core/services/recipe.service';
 
 @Component({
   selector: 'app-generator',
   standalone: true,
   imports: [
-    CommonModule, FormsModule, HeaderComponent,
+    CommonModule, FormsModule, HeaderComponent, ErrorBannerComponent,
     MatCardModule, MatFormFieldModule, MatInputModule, MatButtonModule,
     MatIconModule, MatChipsModule, MatSelectModule, MatProgressSpinnerModule
   ],

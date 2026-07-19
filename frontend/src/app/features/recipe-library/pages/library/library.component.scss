@@ -5,8 +5,22 @@
   text-align: center;
 }
 
-.library h1 {
+.library-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
   margin-bottom: 24px;
+  text-align: left;
+
+  h1 {
+    margin: 0;
+  }
+
+  mat-icon {
+    margin-right: 4px;
+  }
 }
 
 .search-field {
@@ -23,10 +37,19 @@
   text-align: left;
 }
 
-.loading {
+.tag-filter {
   display: flex;
   justify-content: center;
-  padding: 32px;
+  margin-bottom: 24px;
+
+  mat-chip-listbox {
+    max-width: 800px;
+  }
+}
+
+mat-paginator {
+  margin-top: 24px;
+  background: transparent;
 }
 
 .empty {
@@ -46,13 +69,9 @@
   opacity: 0.4;
 }
 
-.error-banner {
+.empty-actions {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  background: #fdecea;
-  color: #b71c1c;
-  border-radius: 4px;
-  padding: 12px 16px;
-  margin-bottom: 16px;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
 }

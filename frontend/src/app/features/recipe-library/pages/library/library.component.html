@@ -1,26 +1,37 @@
 <app-header></app-header>
 <div class="library">
-  <h1>Rezept-Bibliothek</h1>
+  <div class="library-header">
+    <h1>Rezept-Bibliothek</h1>
+    <a mat-stroked-button routerLink="/recipes/new">
+      <mat-icon>add</mat-icon>
+      Neues Rezept
+    </a>
+  </div>
 
   <mat-form-field appearance="outline" class="search-field">
     <mat-label>Suchen</mat-label>
     <input matInput [ngModel]="searchTerm" (ngModelChange)="onSearchChange($event)"
-           placeholder="Rezeptname...">
+           placeholder="Name, Zutat oder Tag...">
     <mat-icon matSuffix>search</mat-icon>
   </mat-form-field>
 
-  @if (recipeService.loading$ | async) {
-    <div class="loading">
-      <mat-spinner diameter="40"></mat-spinner>
+  @if (availableTags.length > 0) {
+    <div class="tag-filter">
+      <mat-chip-listbox aria-label="Nach Tag filtern"
+                        [value]="selectedTag"
+                        (change)="onTagChange($event.value)">
+        @for (tag of availableTags; track tag) {
+          <mat-chip-option [value]="tag">{{ tag }}</mat-chip-option>
+        }
+      </mat-chip-listbox>
     </div>
   }
 
-  @if (recipeService.error$ | async; as error) {
-    <div class="error-banner">
-      <mat-icon>error_outline</mat-icon>
-      <span>{{ error }}</span>
-    </div>
+  @if (recipeService.loading$ | async) {
+    <app-loading-spinner></app-loading-spinner>
   }
+
+  <app-error-banner [message]="recipeService.error$ | async"></app-error-banner>
 
   @if (recipeService.recipes$ | async; as recipes) {
     @if (recipes.length > 0) {
@@ -29,15 +40,31 @@
           <app-recipe-card [recipe]="recipe"></app-recipe-card>
         }
       </div>
+
+      @if (recipeService.page$ | async; as page) {
+        @if (page.totalElements > pageSize) {
+          <mat-paginator
+            [length]="page.totalElements"
+            [pageIndex]="pageIndex"
+            [pageSize]="pageSize"
+            [pageSizeOptions]="[6, 12, 24]"
+            (page)="onPageChange($event)"
+            aria-label="Seite wählen">
+          </mat-paginator>
+        }
+      }
     } @else if (!(recipeService.loading$ | async) && !(recipeService.error$ | async)) {
       <div class="empty">
-        @if (searchTerm) {
+        @if (searchTerm || selectedTag) {
           <mat-icon class="empty-icon">search_off</mat-icon>
-          <p>Keine Rezepte zu „{{ searchTerm }}" gefunden.</p>
+          <p>Keine Rezepte zu „{{ searchTerm || selectedTag }}" gefunden.</p>
         } @else {
           <mat-icon class="empty-icon">menu_book</mat-icon>
           <p>Es sind noch keine Rezepte vorhanden.</p>
-          <a mat-raised-button color="primary" routerLink="/recipes/generate">Erstes Rezept generieren</a>
+          <div class="empty-actions">
+            <a mat-raised-button color="primary" routerLink="/recipes/generate">Erstes Rezept generieren</a>
+            <a mat-stroked-button routerLink="/recipes/new">Manuell erfassen</a>
+          </div>
         }
       </div>
     }

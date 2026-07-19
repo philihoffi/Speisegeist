@@ -1,0 +1,23 @@
+:host {
+  margin-top: auto;
+}
+
+.app-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 16px 24px;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+
+  a {
+    color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}

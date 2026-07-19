@@ -52,7 +52,46 @@
 - ✅ JPA-Entities (`User`, `Recipe`) nutzen `@EqualsAndHashCode(onlyExplicitlyIncluded)` statt `@Data`
 - ✅ Backend Unit- & Integrations-Tests (AuthService, RecipeService, Repository-Suche) gegen H2
 - ✅ Backend-/Frontend-Dockerfiles, `nginx.conf` (SPA + `/api`-Proxy), Root-`README.md`
-- ⬜ Offen: KI-Generierung mit echtem OpenRouter-Key end-to-end testen, Frontend-Unit-Tests (Vitest), Shared Error-Banner/Loading-Spinner, Inline-Edit & Cook-Mode-Link
+- ✅ Controller-Tests (MockMvc): RecipeController (6 Tests), AuthController (2 Tests) — 22 Backend-Tests grün
+- ✅ Shared-Komponenten Error-Banner & Loading-Spinner in Dashboard, Library, Generator, Detail integriert
+- ✅ Footer-Komponente global im Root-Layout
+- ✅ Library: Tag-Filter (Chip-Listbox) + Pagination (MatPaginator, erscheint ab > pageSize Einträgen)
+- ✅ Detail: Inline-Edit für Name/Beschreibung (partial PUT), Source-Info (KI-Modell bzw. „Manuell erstellt")
+- ✅ Dark-Glassmorphism-Design: dunkler Gradient-Hintergrund, Frosted-Glass-Panels, transluzenter Sticky-Header
+- ✅ 401-Handling im Auth-Interceptor (Logout + Redirect zu /auth/login)
+- ✅ Security-Logging in Prod auf INFO (keine Token/Header in Logs); tote `spring.security.user`-Credentials entfernt
+- ✅ Browser-E2E verifiziert (Preview): Login → Dashboard → Library (Suche/Tag-Filter) → Detail (Edit, Rating, Portion-Scaler) → Delete
+- ⬜ Offen: KI-Generierung mit echtem OpenRouter-Key end-to-end testen (kein Key in `.env` — 503 ohne Key), Frontend-Unit-Tests (Vitest), Cook-Mode-Link (Phase 2)
+
+**✏️ Vollständiges Inline-Edit (2026-07-18):**
+Die Bearbeiten-Funktion in der Detail-View erlaubte bisher nur Name & Beschreibung. Auf Wunsch erweitert um
+Vorbereitungs-/Kochzeit, Portionen, Kcal, Tags sowie dynamische Zutaten- und Schritte-Listen (Add/Remove) —
+identisches UX-Muster wie die manuelle Erfassungsseite. Die Zeilen-Umwandlung (Recipe ↔ Draft-Rows) und
+Payload-Erstellung wurden in `core/utils/recipe-form.util.ts` extrahiert und von `manual.component.ts` und
+`detail.component.ts` gemeinsam genutzt, statt dupliziert. Im Preview verifiziert: Name geändert, neue Zutat
+hinzugefügt, gespeichert — unveränderte Felder (Beschreibung, bestehende Zutat/Schritt, Tag) blieben erhalten.
+
+**🆕 Manuelle Rezept-Erfassung (2026-07-18):**
+Backend unterstützte `POST /api/recipes` bereits vollständig (Service + Controller + Tests), aber im Frontend
+fehlte dafür eine Eingabemaske — Nutzer konnten nur KI-generierte Rezepte anlegen. Neue Seite
+`features/recipe-manual/pages/manual/` (Route `/recipes/new`, vor `:id` einsortiert) mit Feldern für
+Name/Beschreibung/Zeiten/Kcal/Portionen, dynamischer Zutaten- und Schritte-Liste (Add/Remove-Zeilen) und
+Tag-Chips; Submit ruft `ApiService.createRecipe()` und navigiert zur Detail-View. Einstiegspunkte in Header,
+Dashboard-Hero und Library (Toolbar-Button + Leerzustand) ergänzt. Neuer Controller-Test `create_returns201`
+für den bisher ungetesteten HTTP-Layer von `POST /recipes`. Im Preview end-to-end verifiziert (Formular →
+Speichern → Detail-View zeigt Name/Zutat/Schritt/Tag/„Manuell erstellt" korrekt).
+
+**🧹 Struktur-Aufräumung (2026-07-18):**
+- Leere Scaffold-Leichen entfernt: `src/shared/` (Duplikat-Skelett neben `src/app/shared/`), `src/app/auth/` (alte Auth-Struktur vor dem Umzug nach `features/auth/`), `src/app/shared/{directives,pipes,styles}/`, `src/assets/` (Angular nutzt `public/`), sowie die geplanten, nie gebauten `generator-result/`- und `recipe-list/`-Ordner
+- `src/theme.scss` gelöscht (unreferenzierter Theme-Entwurf; die tatsächlich geladenen Styles liegen in `src/styles.css`)
+- `dashboard.component.*` nach `features/dashboard/pages/dashboard/` verschoben, damit alle fünf Features einheitlich `features/<name>/pages/<page>/` folgen (vorher lag Dashboard direkt unter `features/dashboard/`)
+- Footer-Bug behoben: `margin-top: auto` saß auf der `.app-footer`-Klasse *innerhalb* der Komponente statt auf dem `:host`-Element, das der eigentliche Flex-Child in `.app-container` ist — Footer klebte dadurch am Inhalt statt am Viewport-Ende
+
+**⚠️ Zoneless-Angular-Stolperstein (2026-07-18 behoben):**
+Die App läuft ohne zone.js (Angular-22-Default). Komponenten-State, der in `subscribe()`-Callbacks
+gesetzt wird, MUSS ein Signal sein (oder via `async`-Pipe laufen), sonst rendert die View nach dem
+HTTP-Response nicht neu. Betroffen waren Detail (hing dauerhaft im Spinner), Login und Register
+(Fehlermeldung/Loading-State erschien nie) — alle auf Signals umgestellt.
 
 **Spring-Boot-4-Stolpersteine (dokumentiert, bereits behoben):**
 - Flyway braucht `spring-boot-starter-flyway` — `flyway-core` allein löst keine Auto-Konfiguration mehr aus
@@ -353,7 +392,7 @@ POST   /api/recipes/{id}/rating     → 200 + Recipe
 - [x] @RestControllerAdvice für globale Exception-Behandlung (deutsche Fehlermeldungen)
 - [x] Konsistente ErrorResponse-DTOs (status, message, timestamp)
 - [x] Logging-Level konfiguriert (root=INFO, com.philipphofmann=DEBUG)
-- [ ] Keine sensitiven Daten in Logs (API Keys maskieren)
+- [x] Keine sensitiven Daten in Logs (kein Key-Logging im Code; Security-DEBUG nur im dev-Profil)
 
 ---
 
@@ -372,8 +411,8 @@ POST   /api/recipes/{id}/rating     → 200 + Recipe
 - [x] Routing: '', 'auth/login', 'auth/register', 'recipes/*' (lazy-loaded, AuthGuard)
 - [x] Root-Layout mit Router-Outlet; Header wird pro Seite eingebunden
 - [x] Dev-Proxy: proxy.conf.json (`/api` → localhost:8080)
-- [ ] Dark Glassmorphism Hintergrund
-- [ ] Footer-Komponente
+- [x] Dark Glassmorphism Hintergrund
+- [x] Footer-Komponente
 
 > Konvention: Jede Komponente besteht aus getrennten `.ts` + `.html` + `.scss` Dateien (templateUrl/styleUrl).
 
@@ -405,7 +444,7 @@ $bp-desktop: 1200px;
 - [x] auth.service.ts: login(), register(), logout(), isAuthenticated$, currentUser$
 - [x] JWT in localStorage speichern
 - [x] auth.interceptor.ts: Authorization: Bearer <token> auf alle Requests (klassenbasiert, via `withInterceptorsFromDi()` registriert!)
-- [ ] auth.interceptor.ts: 401 → logout() + redirect /auth/login
+- [x] auth.interceptor.ts: 401 → logout() + redirect /auth/login
 - [x] auth.guard.ts: Route-Protection mit Redirect zu /auth/login
 - [x] LoginComponent: Form + Submit → navigate Dashboard
 - [x] RegisterComponent: Form + Passwort-Bestätigung → auto-login
@@ -445,6 +484,7 @@ $bp-desktop: 1200px;
 - [x] Ergebnis: navigiert direkt zur Detail-View des gespeicherten Rezepts (Backend speichert beim Generieren)
 - [ ] Optional: separater Ergebnis-Schritt mit Verwerfen/Neu-generieren vor dem Speichern
 - [x] Material Layout, responsive Design
+- [x] Alternative: `/recipes/new` — komplett manuelle Rezept-Erfassung (Name, Zutaten- & Schritte-Listen, Tags) ohne KI
 
 ---
 
@@ -457,18 +497,18 @@ $bp-desktop: 1200px;
 
 **Tasks:**
 - [x] Library: Such-Input (debounced 300ms)
-- [ ] Filter-Sidebar (Tags)
+- [x] Tag-Filter (Chip-Listbox statt Sidebar)
 - [x] Recipe-Liste: Karten-Grid (auto-fill, min 280px)
-- [ ] Pagination-UI (Backend liefert bereits Page-Response)
+- [x] Pagination-UI (MatPaginator; sichtbar ab > pageSize Einträgen)
 - [x] Card: Name, Tags, Rating, Zeit, Kcal
 - [x] Click → navigate /recipes/{id}
 - [x] Leer-/Fehlerzustände: "Noch keine Rezepte vorhanden" + CTA, Fehlerbanner, "Keine Treffer zu ‚…'"
 - [x] Detail-View: Beschreibung, Zutaten (Liste), Schritte (nummeriert), Kcal (als Schätzung markiert)
   - [x] Portion-Scaler (live update, kein API-Call)
   - [x] Delete (Confirm), Rate (Stars)
-  - [ ] Name/Beschreibung inline editieren
+  - [x] Vollständig inline editieren (Name, Beschreibung, Zeiten, Portionen, Kcal, Tags, Zutaten- & Schritte-Listen)
   - [ ] Cook-Mode-Link (Phase 2)
-- [ ] Source-Info anzeigen (generiert von KI, Modellname)
+- [x] Source-Info anzeigen (generiert von KI, Modellname)
 - [x] Responsive Karten-Grid
 
 ---
@@ -484,10 +524,10 @@ $bp-desktop: 1200px;
 
 **Tasks:**
 - [x] Header: Navigation (Dashboard, Generator, Library), User-Dropdown (Email + Logout)
-- [ ] Footer: Copyright, Links (optional)
+- [x] Footer: Copyright, Links (optional)
 - [x] Recipe-Card: Reusable Komponente (Input: Recipe, navigiert bei Click)
-- [ ] Error-Banner als eigene Shared-Komponente (aktuell inline in Dashboard/Library)
-- [ ] Loading-Spinner als eigene Shared-Komponente (aktuell inline MatProgressSpinner)
+- [x] Error-Banner als eigene Shared-Komponente (in Dashboard/Library/Generator/Detail integriert)
+- [x] Loading-Spinner als eigene Shared-Komponente (in Library/Detail integriert)
 
 ---
 
@@ -519,13 +559,13 @@ $bp-desktop: 1200px;
 - [x] Unit Tests: AuthService, RecipeService (Services)
 - [x] Integration Tests: Repository-Suche (H2, @SpringBootTest)
 - [ ] Unit Tests: ≥40% Coverage (Rest der Klassen)
-- [ ] Integration Tests: Controller (MockMvc)
+- [x] Integration Tests: Controller (MockMvc, standalone-Setup mit GlobalExceptionHandler)
 - [x] Flyway-Migrationen laufen auf Fresh PostgreSQL
 - [x] Error Handling: 401, 404, 503, 400 (per Smoke-Test verifiziert)
 
 **Frontend:**
 - [x] TypeScript Compilation: `npm run build` fehlerfrei
-- [ ] Auth Flow im Browser: Register → Login → Protected Routes (API-seitig bereits verifiziert)
+- [x] Auth Flow im Browser: Register → Login → Protected Routes (im Preview verifiziert; dabei Zoneless-Rendering-Bug in Detail/Login/Register gefunden und behoben)
 - [ ] Responsive: 480px, 768px, 1200px getestet
 
 **E2E User Story (muss komplett funktionieren):**
@@ -712,8 +752,9 @@ frontend/src/app/app.component.{ts,html,scss}
 frontend/src/shared/styles/theme.scss
 frontend/src/shared/components/header/header.component.{ts,html,scss}
 frontend/src/shared/components/recipe-card/recipe-card.component.{ts,html,scss}
-frontend/src/shared/components/error-banner/         (offen)
-frontend/src/shared/components/loading-spinner/      (offen)
+frontend/src/shared/components/footer/footer.component.{ts,html,scss}
+frontend/src/shared/components/error-banner/error-banner.component.{ts,html,scss}
+frontend/src/shared/components/loading-spinner/loading-spinner.component.{ts,html,scss}
 ```
 
 ### Infrastructure

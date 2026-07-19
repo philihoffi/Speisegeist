@@ -1,0 +1,120 @@
+<app-header></app-header>
+<div class="manual">
+  <h1>Rezept manuell erfassen</h1>
+
+  <mat-card>
+    <mat-card-content>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Name</mat-label>
+        <input matInput [(ngModel)]="name" required placeholder="z.B. Linsen-Curry">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Beschreibung</mat-label>
+        <textarea matInput [(ngModel)]="description" rows="2"></textarea>
+      </mat-form-field>
+
+      <div class="meta-fields">
+        <mat-form-field appearance="outline">
+          <mat-label>Vorbereitung (Min.)</mat-label>
+          <input matInput type="number" [(ngModel)]="preparationTimeMinutes" min="0">
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Kochzeit (Min.)</mat-label>
+          <input matInput type="number" [(ngModel)]="cookTimeMinutes" min="0">
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Portionen</mat-label>
+          <input matInput type="number" [(ngModel)]="servings" min="1" max="20">
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Kcal (Schätzung)</mat-label>
+          <input matInput type="number" [(ngModel)]="estimatedKcal" min="0">
+        </mat-form-field>
+      </div>
+
+      <div class="tag-input">
+        <mat-form-field appearance="outline" class="grow">
+          <mat-label>Tag hinzufügen</mat-label>
+          <input matInput [(ngModel)]="tagInput" (keyup.enter)="addTag()" placeholder="z.B. vegan, schnell">
+        </mat-form-field>
+        <button mat-icon-button color="primary" (click)="addTag()" [disabled]="!tagInput.trim()">
+          <mat-icon>add</mat-icon>
+        </button>
+      </div>
+      @if (tags.length > 0) {
+        <mat-chip-set class="tags">
+          @for (tag of tags; track $index) {
+            <mat-chip (removed)="removeTag($index)">
+              {{ tag }}
+              <button matChipRemove><mat-icon>cancel</mat-icon></button>
+            </mat-chip>
+          }
+        </mat-chip-set>
+      }
+
+      <h2>Zutaten</h2>
+      <div class="rows">
+        @for (ing of ingredients; track $index) {
+          <div class="ingredient-row">
+            <mat-form-field appearance="outline" class="ing-name">
+              <mat-label>Zutat</mat-label>
+              <input matInput [(ngModel)]="ing.name" placeholder="z.B. Linsen">
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="ing-quantity">
+              <mat-label>Menge</mat-label>
+              <input matInput type="number" [(ngModel)]="ing.quantity" min="0">
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="ing-unit">
+              <mat-label>Einheit</mat-label>
+              <input matInput [(ngModel)]="ing.unit" placeholder="g, ml, Stück...">
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="ing-notes">
+              <mat-label>Notiz</mat-label>
+              <input matInput [(ngModel)]="ing.notes" placeholder="optional">
+            </mat-form-field>
+            <button mat-icon-button (click)="removeIngredientRow($index)" [disabled]="ingredients.length === 1"
+                    aria-label="Zutat entfernen">
+              <mat-icon>delete_outline</mat-icon>
+            </button>
+          </div>
+        }
+      </div>
+      <button mat-stroked-button (click)="addIngredientRow()" class="add-row-btn">
+        <mat-icon>add</mat-icon> Zutat hinzufügen
+      </button>
+
+      <h2>Zubereitung</h2>
+      <div class="rows">
+        @for (step of steps; track $index) {
+          <div class="step-row">
+            <span class="step-number">{{ $index + 1 }}.</span>
+            <mat-form-field appearance="outline" class="step-instruction">
+              <mat-label>Schritt</mat-label>
+              <textarea matInput [(ngModel)]="step.instruction" rows="1"></textarea>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="step-duration">
+              <mat-label>Min.</mat-label>
+              <input matInput type="number" [(ngModel)]="step.durationMinutes" min="0">
+            </mat-form-field>
+            <button mat-icon-button (click)="removeStepRow($index)" [disabled]="steps.length === 1"
+                    aria-label="Schritt entfernen">
+              <mat-icon>delete_outline</mat-icon>
+            </button>
+          </div>
+        }
+      </div>
+      <button mat-stroked-button (click)="addStepRow()" class="add-row-btn">
+        <mat-icon>add</mat-icon> Schritt hinzufügen
+      </button>
+
+      <app-error-banner [message]="error()"></app-error-banner>
+
+      <button mat-raised-button color="primary" class="save-btn"
+              (click)="submit()" [disabled]="!canSubmit || saving()">
+        <mat-icon>save</mat-icon>
+        {{ saving() ? 'Wird gespeichert…' : 'Rezept speichern' }}
+      </button>
+    </mat-card-content>
+  </mat-card>
+</div>

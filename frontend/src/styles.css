@@ -2,7 +2,10 @@
 :root {
   --color-primary: #2E7D32;
   --color-accent: #FF6F00;
-  --color-background: #fafafa;
+  --color-background: #0f1c14;
+
+  --glass-panel-bg: rgba(255, 255, 255, 0.88);
+  --glass-border: rgba(255, 255, 255, 0.35);
 
   --spacing-xs: 4px;
   --spacing-sm: 8px;
@@ -22,5 +25,52 @@ html, body {
 
 body {
   font-family: Roboto, "Helvetica Neue", sans-serif;
-  background: var(--color-background);
+  /* Dark Glassmorphism: dunkler Verlauf mit Farbakzenten in Primär-/Akzentfarbe */
+  background:
+    radial-gradient(ellipse 80% 60% at 15% 10%, rgba(46, 125, 50, 0.35), transparent 60%),
+    radial-gradient(ellipse 70% 50% at 85% 20%, rgba(255, 111, 0, 0.18), transparent 55%),
+    radial-gradient(ellipse 60% 50% at 50% 100%, rgba(25, 118, 210, 0.15), transparent 60%),
+    linear-gradient(160deg, #0f1c14 0%, #101820 55%, #16121f 100%);
+  background-attachment: fixed;
+  background-color: var(--color-background);
+}
+
+/* Frosted-Glass-Panels für die Seiten-Container (Text darin bleibt dunkel) */
+.dashboard,
+.library,
+.generator,
+.detail {
+  background: var(--glass-panel-bg);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  margin-top: 24px !important;
+  margin-bottom: 24px !important;
+}
+
+/* Header als transluzente Glasleiste */
+mat-toolbar.mat-toolbar {
+  background: rgba(15, 28, 20, 0.65) !important;
+  color: #fff !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* MDC-Buttons erben die Toolbar-Farbe nicht — Label-Farbe explizit setzen */
+mat-toolbar.mat-toolbar .mdc-button,
+mat-toolbar.mat-toolbar .mat-mdc-icon-button {
+  --mdc-text-button-label-text-color: #fff;
+  --mdc-icon-button-icon-color: #fff;
+  color: #fff;
+}
+
+/* Überschriften, die direkt auf dem dunklen Hintergrund liegen (Auth-Seiten o.ä.) */
+.on-dark {
+  color: rgba(255, 255, 255, 0.92);
 }

@@ -12,11 +12,13 @@ export class RecipeService {
   private selectedRecipeSubject = new BehaviorSubject<Recipe | null>(null);
   private loadingSubject = new BehaviorSubject<boolean>(false);
   private errorSubject = new BehaviorSubject<string | null>(null);
+  private pageSubject = new BehaviorSubject<PageResponse<Recipe> | null>(null);
 
   public recipes$ = this.recipeListSubject.asObservable();
   public selectedRecipe$ = this.selectedRecipeSubject.asObservable();
   public loading$ = this.loadingSubject.asObservable();
   public error$ = this.errorSubject.asObservable();
+  public page$ = this.pageSubject.asObservable();
 
   constructor(private api: ApiService) { }
 
@@ -31,6 +33,7 @@ export class RecipeService {
       .subscribe({
         next: (response: PageResponse<Recipe>) => {
           this.recipeListSubject.next(response.content);
+          this.pageSubject.next(response);
         },
         error: (err) => {
           this.errorSubject.next(err.error?.message

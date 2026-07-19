@@ -28,6 +28,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/recipe-library/pages/library/library.component').then(m => m.LibraryComponent)
       },
       {
+        path: 'new',
+        loadComponent: () => import('./features/recipe-manual/pages/manual/manual.component').then(m => m.ManualRecipeComponent)
+      },
+      {
         path: ':id',
         loadComponent: () => import('./features/recipe-detail/pages/detail/detail.component').then(m => m.DetailComponent)
       }
@@ -35,7 +39,7 @@ export const routes: Routes = [
   },
   {
     path: '',
-    loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent),
+    loadComponent: () => import('./features/dashboard/pages/dashboard/dashboard.component').then(m => m.DashboardComponent),
     canActivate: [AuthGuard]
   },
   {

@@ -3,6 +3,7 @@
   <span class="spacer"></span>
   @if (auth.isAuthenticated$ | async) {
     <a mat-button routerLink="/recipes/generate">Generieren</a>
+    <a mat-button routerLink="/recipes/new">Manuell erfassen</a>
     <a mat-button routerLink="/recipes/library">Bibliothek</a>
     <button mat-icon-button [matMenuTriggerFor]="userMenu">
       <mat-icon>account_circle</mat-icon>

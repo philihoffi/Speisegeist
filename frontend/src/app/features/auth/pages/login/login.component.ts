@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -22,8 +22,9 @@ import { AuthService } from '../../../../core/services/auth.service';
 })
 export class LoginComponent {
   form: FormGroup;
-  loading = false;
-  error: string | null = null;
+  // Zoneless: in Subscribe-Callbacks gesetzter Zustand muss ein Signal sein
+  loading = signal(false);
+  error = signal<string | null>(null);
 
   constructor(private fb: FormBuilder, private auth: AuthService, private router: Router) {
     this.form = this.fb.group({
@@ -34,15 +35,15 @@ export class LoginComponent {
 
   onSubmit(): void {
     if (this.form.invalid) return;
-    this.loading = true;
-    this.error = null;
+    this.loading.set(true);
+    this.error.set(null);
 
     const { email, password } = this.form.value;
     this.auth.login(email, password).subscribe({
       next: () => this.router.navigate(['/']),
       error: (err) => {
-        this.loading = false;
-        this.error = err.error?.message || 'Anmeldung fehlgeschlagen';
+        this.loading.set(false);
+        this.error.set(err.error?.message || 'Anmeldung fehlgeschlagen');
       }
     });
   }

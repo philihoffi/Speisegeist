@@ -34,13 +34,13 @@
             Passwörter stimmen nicht überein
           </div>
         }
-        @if (error) {
-          <div class="error-message">{{ error }}</div>
+        @if (error()) {
+          <div class="error-message">{{ error() }}</div>
         }
 
         <button mat-raised-button color="primary" type="submit" class="full-width"
-                [disabled]="form.invalid || loading">
-          @if (loading) {
+                [disabled]="form.invalid || loading()">
+          @if (loading()) {
             <mat-spinner diameter="20" class="inline-spinner"></mat-spinner>
           } @else {
             <span>Registrieren</span>

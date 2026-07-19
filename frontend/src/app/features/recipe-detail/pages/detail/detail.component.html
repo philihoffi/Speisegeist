@@ -1,94 +1,223 @@
 <app-header></app-header>
-@if (recipe) {
+@if (recipe(); as recipe) {
   <div class="detail">
-    <div class="title-row">
-      <h1>{{ recipe.name }}</h1>
-      <div class="actions">
-        <button mat-icon-button (click)="deleteRecipe()" aria-label="Löschen">
-          <mat-icon>delete</mat-icon>
-        </button>
+    @if (!editing()) {
+      <div class="title-row">
+        <h1>{{ recipe.name }}</h1>
+        <div class="actions">
+          <button mat-icon-button (click)="startEdit()" aria-label="Bearbeiten">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button (click)="deleteRecipe()" aria-label="Löschen">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
       </div>
-    </div>
 
-    @if (recipe.description) {
-      <p class="description">{{ recipe.description }}</p>
-    }
-
-    <div class="meta">
-      @if (recipe.preparationTimeMinutes) {
-        <span>Vorbereitung: {{ recipe.preparationTimeMinutes }} Min.</span>
+      @if (recipe.description) {
+        <p class="description">{{ recipe.description }}</p>
       }
-      @if (recipe.cookTimeMinutes) {
-        <span>Kochzeit: {{ recipe.cookTimeMinutes }} Min.</span>
-      }
-      @if (recipe.estimatedKcal) {
-        <span>~{{ recipe.estimatedKcal }} kcal (Schätzung)</span>
-      }
-    </div>
+    } @else {
+      <div class="edit-form">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Name</mat-label>
+          <input matInput [(ngModel)]="editName" required>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Beschreibung</mat-label>
+          <textarea matInput [(ngModel)]="editDescription" rows="2"></textarea>
+        </mat-form-field>
 
-    <div class="rating">
-      @for (star of [1,2,3,4,5]; track star) {
-        <button mat-icon-button (click)="rate(star)">
-          <mat-icon>{{ (recipe.rating || 0) >= star ? 'star' : 'star_border' }}</mat-icon>
-        </button>
-      }
-    </div>
-
-    @if (recipe.tags.length > 0) {
-      <mat-chip-set>
-        @for (tag of recipe.tags; track tag) {
-          <mat-chip>{{ tag }}</mat-chip>
-        }
-      </mat-chip-set>
-    }
-
-    <div class="columns">
-      <mat-card class="ingredients-card">
-        <mat-card-header>
-          <mat-card-title>Zutaten</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <mat-form-field appearance="outline" class="servings-field">
-            <mat-label>Portionen</mat-label>
-            <input matInput type="number" [(ngModel)]="displayServings" min="1" max="20">
+        <div class="meta-fields">
+          <mat-form-field appearance="outline">
+            <mat-label>Vorbereitung (Min.)</mat-label>
+            <input matInput type="number" [(ngModel)]="editPreparationTimeMinutes" min="0">
           </mat-form-field>
-          <mat-list>
-            @for (ing of recipe.ingredients; track $index) {
-              <mat-list-item>
-                @if (ing.quantity) {
-                  <span class="quantity">{{ scaledQuantity(ing.quantity) | number:'1.0-1' }} {{ ing.unit }}</span>
-                }
-                {{ ing.name }}
-                @if (ing.notes) {
-                  <span class="notes"> ({{ ing.notes }})</span>
-                }
-              </mat-list-item>
-            }
-          </mat-list>
-        </mat-card-content>
-      </mat-card>
+          <mat-form-field appearance="outline">
+            <mat-label>Kochzeit (Min.)</mat-label>
+            <input matInput type="number" [(ngModel)]="editCookTimeMinutes" min="0">
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Portionen</mat-label>
+            <input matInput type="number" [(ngModel)]="editServings" min="1" max="20">
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Kcal (Schätzung)</mat-label>
+            <input matInput type="number" [(ngModel)]="editEstimatedKcal" min="0">
+          </mat-form-field>
+        </div>
 
-      <mat-card class="steps-card">
-        <mat-card-header>
-          <mat-card-title>Zubereitung</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <ol class="steps">
-            @for (step of recipe.steps; track $index) {
-              <li>
-                {{ step.instruction }}
-                @if (step.durationMinutes) {
-                  <span class="duration"> ({{ step.durationMinutes }} Min.)</span>
-                }
-              </li>
+        <div class="tag-input">
+          <mat-form-field appearance="outline" class="grow">
+            <mat-label>Tag hinzufügen</mat-label>
+            <input matInput [(ngModel)]="editTagInput" (keyup.enter)="addTag()" placeholder="z.B. vegan, schnell">
+          </mat-form-field>
+          <button mat-icon-button color="primary" (click)="addTag()" [disabled]="!editTagInput.trim()">
+            <mat-icon>add</mat-icon>
+          </button>
+        </div>
+        @if (editTags.length > 0) {
+          <mat-chip-set class="tags">
+            @for (tag of editTags; track $index) {
+              <mat-chip (removed)="removeTag($index)">
+                {{ tag }}
+                <button matChipRemove><mat-icon>cancel</mat-icon></button>
+              </mat-chip>
             }
-          </ol>
-        </mat-card-content>
-      </mat-card>
-    </div>
+          </mat-chip-set>
+        }
+
+        <h2>Zutaten</h2>
+        <div class="rows">
+          @for (ing of editIngredients; track $index) {
+            <div class="ingredient-row">
+              <mat-form-field appearance="outline" class="ing-name">
+                <mat-label>Zutat</mat-label>
+                <input matInput [(ngModel)]="ing.name">
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="ing-quantity">
+                <mat-label>Menge</mat-label>
+                <input matInput type="number" [(ngModel)]="ing.quantity" min="0">
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="ing-unit">
+                <mat-label>Einheit</mat-label>
+                <input matInput [(ngModel)]="ing.unit" placeholder="g, ml, Stück...">
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="ing-notes">
+                <mat-label>Notiz</mat-label>
+                <input matInput [(ngModel)]="ing.notes" placeholder="optional">
+              </mat-form-field>
+              <button mat-icon-button (click)="removeIngredientRow($index)" [disabled]="editIngredients.length === 1"
+                      aria-label="Zutat entfernen">
+                <mat-icon>delete_outline</mat-icon>
+              </button>
+            </div>
+          }
+        </div>
+        <button mat-stroked-button (click)="addIngredientRow()" class="add-row-btn">
+          <mat-icon>add</mat-icon> Zutat hinzufügen
+        </button>
+
+        <h2>Zubereitung</h2>
+        <div class="rows">
+          @for (step of editSteps; track $index) {
+            <div class="step-row">
+              <span class="step-number">{{ $index + 1 }}.</span>
+              <mat-form-field appearance="outline" class="step-instruction">
+                <mat-label>Schritt</mat-label>
+                <textarea matInput [(ngModel)]="step.instruction" rows="1"></textarea>
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="step-duration">
+                <mat-label>Min.</mat-label>
+                <input matInput type="number" [(ngModel)]="step.durationMinutes" min="0">
+              </mat-form-field>
+              <button mat-icon-button (click)="removeStepRow($index)" [disabled]="editSteps.length === 1"
+                      aria-label="Schritt entfernen">
+                <mat-icon>delete_outline</mat-icon>
+              </button>
+            </div>
+          }
+        </div>
+        <button mat-stroked-button (click)="addStepRow()" class="add-row-btn">
+          <mat-icon>add</mat-icon> Schritt hinzufügen
+        </button>
+
+        <app-error-banner [message]="editError()"></app-error-banner>
+        <div class="edit-actions">
+          <button mat-raised-button color="primary" (click)="saveEdit()"
+                  [disabled]="!canSaveEdit || saving()">
+            {{ saving() ? 'Wird gespeichert…' : 'Speichern' }}
+          </button>
+          <button mat-stroked-button (click)="cancelEdit()" [disabled]="saving()">Abbrechen</button>
+        </div>
+      </div>
+    }
+
+    @if (!editing()) {
+      <div class="meta">
+        @if (recipe.preparationTimeMinutes) {
+          <span>Vorbereitung: {{ recipe.preparationTimeMinutes }} Min.</span>
+        }
+        @if (recipe.cookTimeMinutes) {
+          <span>Kochzeit: {{ recipe.cookTimeMinutes }} Min.</span>
+        }
+        @if (recipe.estimatedKcal) {
+          <span>~{{ recipe.estimatedKcal }} kcal (Schätzung)</span>
+        }
+      </div>
+
+      <div class="source-info">
+        @if (recipe.sourceType === 'GENERATED') {
+          <mat-icon inline>auto_awesome</mat-icon>
+          <span>KI-generiert{{ recipe.sourceModel ? ' mit ' + recipe.sourceModel : '' }}</span>
+        } @else {
+          <mat-icon inline>edit_note</mat-icon>
+          <span>Manuell erstellt</span>
+        }
+      </div>
+
+      <div class="rating">
+        @for (star of [1,2,3,4,5]; track star) {
+          <button mat-icon-button (click)="rate(star)">
+            <mat-icon>{{ (recipe.rating || 0) >= star ? 'star' : 'star_border' }}</mat-icon>
+          </button>
+        }
+      </div>
+
+      @if (recipe.tags.length > 0) {
+        <mat-chip-set>
+          @for (tag of recipe.tags; track tag) {
+            <mat-chip>{{ tag }}</mat-chip>
+          }
+        </mat-chip-set>
+      }
+
+      <div class="columns">
+        <mat-card class="ingredients-card">
+          <mat-card-header>
+            <mat-card-title>Zutaten</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <mat-form-field appearance="outline" class="servings-field">
+              <mat-label>Portionen</mat-label>
+              <input matInput type="number" [(ngModel)]="displayServings" min="1" max="20">
+            </mat-form-field>
+            <mat-list>
+              @for (ing of recipe.ingredients; track $index) {
+                <mat-list-item>
+                  @if (ing.quantity) {
+                    <span class="quantity">{{ scaledQuantity(ing.quantity) | number:'1.0-1' }} {{ ing.unit }}</span>
+                  }
+                  {{ ing.name }}
+                  @if (ing.notes) {
+                    <span class="notes"> ({{ ing.notes }})</span>
+                  }
+                </mat-list-item>
+              }
+            </mat-list>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="steps-card">
+          <mat-card-header>
+            <mat-card-title>Zubereitung</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <ol class="steps">
+              @for (step of recipe.steps; track $index) {
+                <li>
+                  {{ step.instruction }}
+                  @if (step.durationMinutes) {
+                    <span class="duration"> ({{ step.durationMinutes }} Min.)</span>
+                  }
+                </li>
+              }
+            </ol>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    }
   </div>
 } @else {
-  <div class="loading">
-    <mat-spinner diameter="40"></mat-spinner>
-  </div>
+  <app-loading-spinner></app-loading-spinner>
 }

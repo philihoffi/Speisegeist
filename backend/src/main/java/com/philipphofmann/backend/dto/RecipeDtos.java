@@ -86,9 +86,10 @@ public final class RecipeDtos {
             LocalDateTime updatedAt) {
 
         public static RecipeSummaryResponse from(Recipe r) {
+            List<IngredientDto> ingredients = r.getIngredients() == null ? List.of() : r.getIngredients().stream().map(IngredientDto::from).toList();
             return new RecipeSummaryResponse(
                     r.getId(), r.getUserId(), r.getName(), r.getDescription(),
-                    r.getIngredients().stream().map(IngredientDto::from).toList(),
+                    ingredients,
                     r.getPreparationTimeMinutes(), r.getCookTimeMinutes(),
                     r.getServings(), r.getEstimatedKcal(), r.getRating(), r.getTags(),
                     r.getSourceType(), r.getCreatedAt(), r.getUpdatedAt());
@@ -115,11 +116,14 @@ public final class RecipeDtos {
             LocalDateTime updatedAt) {
 
         public static RecipeResponse from(Recipe r) {
+            List<IngredientDto> ingredients = r.getIngredients() == null ? List.of()
+                    : r.getIngredients().stream().map(IngredientDto::from).toList();
+            List<StepDto> steps = r.getSteps() == null ? List.of()
+                    : java.util.stream.IntStream.range(0, r.getSteps().size())
+                            .mapToObj(i -> StepDto.from(r.getSteps().get(i), i)).toList();
             return new RecipeResponse(
                     r.getId(), r.getUserId(), r.getName(), r.getDescription(),
-                    r.getIngredients().stream().map(IngredientDto::from).toList(),
-                    java.util.stream.IntStream.range(0, r.getSteps().size())
-                            .mapToObj(i -> StepDto.from(r.getSteps().get(i), i)).toList(),
+                    ingredients, steps,
                     r.getPreparationTimeMinutes(), r.getCookTimeMinutes(),
                     r.getServings(), r.getEstimatedKcal(), r.getRating(), r.getTags(),
                     r.getSourceType(), r.getSourceModel(), r.getGeneratedAt(),

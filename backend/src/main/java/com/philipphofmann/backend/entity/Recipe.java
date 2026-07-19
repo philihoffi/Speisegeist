@@ -35,17 +35,20 @@ public class Recipe {
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "recipe_ingredients", joinColumns = @JoinColumn(name = "recipe_id"))
     @OrderColumn(name = "display_order")
+    @Builder.Default
     private List<RecipeIngredient> ingredients = new ArrayList<>();
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "cooking_steps", joinColumns = @JoinColumn(name = "recipe_id"))
     @OrderColumn(name = "step_number")
+    @Builder.Default
     private List<CookingStep> steps = new ArrayList<>();
 
     private Integer preparationTimeMinutes;
 
     private Integer cookTimeMinutes;
 
+    @Builder.Default
     private Integer servings = 1;
 
     private Integer estimatedKcal;
@@ -55,6 +58,7 @@ public class Recipe {
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "recipe_tags", joinColumns = @JoinColumn(name = "recipe_id"))
     @Column(name = "tag")
+    @Builder.Default
     private Set<String> tags = new HashSet<>();
 
     @Enumerated(EnumType.STRING)

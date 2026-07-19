@@ -11,15 +11,14 @@
         <mat-icon>menu_book</mat-icon>
         Bibliothek durchsuchen
       </a>
+      <a mat-stroked-button routerLink="/recipes/new">
+        <mat-icon>edit_note</mat-icon>
+        Manuell erfassen
+      </a>
     </div>
   </section>
 
-  @if (recipeService.error$ | async; as error) {
-    <div class="error-banner">
-      <mat-icon>error_outline</mat-icon>
-      <span>{{ error }}</span>
-    </div>
-  }
+  <app-error-banner [message]="recipeService.error$ | async"></app-error-banner>
 
   @if (recipeService.recipes$ | async; as recipes) {
     <section class="recent">
