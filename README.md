@@ -12,6 +12,11 @@ Backend: Spring Boot 4 (Java 17/21) + PostgreSQL + JWT. Frontend: Angular 22 + A
 
 ## Lokale Entwicklung
 
+Bei der lokalen Entwicklung laufen **nur PostgreSQL im Docker-Container**;
+Backend (Spring Boot) und Frontend (Angular) laufen **auf dem Host** (schnelleres
+Build/Hot-Reload, direkter Debug). Die `.env` wird vom `dev`-Profil automatisch
+eingelesen (`spring.config.import`), daher braucht man keine `-D`-Flags.
+
 ### 1. Umgebung
 
 Kopiere `.env.example` zu `.env` und trage mindestens `JWT_SECRET` (≥32 Zeichen) und
@@ -21,20 +26,20 @@ Kopiere `.env.example` zu `.env` und trage mindestens `JWT_SECRET` (≥32 Zeiche
 cp .env.example .env
 ```
 
-### 2. Datenbank
+### 2. Datenbank (Docker)
 
 ```bash
 docker compose up -d postgres
 ```
 
-### 3. Backend
+### 3. Backend (Host)
 
 ```bash
 cd backend
 mvn spring-boot:run -Dspring-boot.run.arguments="--spring.profiles.active=dev"
 ```
 
-### 4. Frontend
+### 4. Frontend (Host)
 
 ```bash
 cd frontend
@@ -44,6 +49,9 @@ npm start
 
 - Frontend: http://localhost:4200
 - API (via Dev-Proxy): http://localhost:4200/api → http://localhost:8080/api
+
+> Hinweis: Ist beim Start `OPENROUTER_API_KEY` leer oder ein Platzhalter, bricht das
+> Backend sofort mit einer klaren Fehlermeldung ab (statt erst nach 30s Timeout).
 
 ## Docker Compose (komplett)
 
