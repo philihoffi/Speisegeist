@@ -45,14 +45,13 @@ public final class RecipeDtos {
     public record IngredientDto(String name, Double quantity, String unit, String warengruppe, String notes) {
 
         public static IngredientDto from(RecipeIngredient i) {
-            return new IngredientDto(i.getName(), i.getQuantity(), i.getUnit(), i.getWarengruppe(), i.getNotes());
-        }
-
-        public RecipeIngredient toEntity() {
-            return RecipeIngredient.builder()
-                    .name(name).quantity(quantity).unit(unit)
-                    .warengruppe(warengruppe).notes(notes)
-                    .build();
+            var ingredient = i.getIngredient();
+            return new IngredientDto(
+                    ingredient != null ? ingredient.getName() : null,
+                    i.getQuantity(),
+                    i.getUnit(),
+                    ingredient != null ? ingredient.getWarengruppe() : null,
+                    i.getNotes());
         }
     }
 

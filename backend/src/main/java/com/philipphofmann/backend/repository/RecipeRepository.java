@@ -20,7 +20,7 @@ public interface RecipeRepository extends JpaRepository<Recipe, UUID> {
 
     @Query("SELECT DISTINCT r FROM Recipe r WHERE r.userId = ?1 AND ("
             + "LOWER(r.name) LIKE LOWER(CONCAT('%', ?2, '%')) "
-            + "OR EXISTS (SELECT i FROM r.ingredients i WHERE LOWER(i.name) LIKE LOWER(CONCAT('%', ?2, '%'))) "
+            + "OR EXISTS (SELECT i FROM r.ingredients i WHERE LOWER(i.ingredient.name) LIKE LOWER(CONCAT('%', ?2, '%'))) "
             + "OR ?2 MEMBER OF r.tags)")
     Page<Recipe> findByUserIdAndSearch(UUID userId, String search, Pageable pageable);
 

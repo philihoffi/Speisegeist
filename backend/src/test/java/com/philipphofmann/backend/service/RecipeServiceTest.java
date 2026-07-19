@@ -2,6 +2,7 @@ package com.philipphofmann.backend.service;
 
 import com.philipphofmann.backend.dto.RecipeDtos.*;
 import com.philipphofmann.backend.entity.CookingStep;
+import com.philipphofmann.backend.entity.Ingredient;
 import com.philipphofmann.backend.entity.Recipe;
 import com.philipphofmann.backend.entity.RecipeIngredient;
 import com.philipphofmann.backend.exception.RecipeNotFoundException;
@@ -41,6 +42,9 @@ class RecipeServiceTest {
     @Mock
     private RecipeGeneratorService recipeGeneratorService;
 
+    @Mock
+    private IngredientService ingredientService;
+
     @InjectMocks
     private RecipeService recipeService;
 
@@ -63,7 +67,8 @@ class RecipeServiceTest {
     void updateRecipe_preservesUnprovidedFields() {
         Recipe existing = Recipe.builder()
                 .name("Old").description("d").servings(2)
-                .ingredients(List.of(RecipeIngredient.builder().name("A").build()))
+                .ingredients(List.of(RecipeIngredient.builder()
+                        .ingredient(Ingredient.builder().name("A").build()).build()))
                 .steps(List.of(CookingStep.builder().instruction("s").build()))
                 .tags(Set.of("vegan"))
                 .build();
@@ -87,6 +92,8 @@ class RecipeServiceTest {
         Recipe existing = Recipe.builder().name("Old").tags(Set.of("vegan")).build();
         when(recipeRepository.findByIdAndUserId(any(), any())).thenReturn(Optional.of(existing));
         when(recipeRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(ingredientService.resolve(any(), any()))
+                .thenAnswer(i -> Ingredient.builder().name(i.getArgument(0)).build());
 
         RecipeRequest full = new RecipeRequest("New", "desc",
                 List.of(new IngredientDto("Tomate", 2.0, "Stück", "Gemüse", null)),
@@ -103,6 +110,8 @@ class RecipeServiceTest {
     @Test
     void createRecipe_manualRequestBuildsCompleteEntity() {
         when(recipeRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(ingredientService.resolve(any(), any()))
+                .thenAnswer(i -> Ingredient.builder().name(i.getArgument(0)).build());
 
         RecipeRequest request = new RecipeRequest("Tofu-Pfanne", "Schnell",
                 List.of(new IngredientDto("Tofu", 200.0, "g", "Kühlregal", null)),

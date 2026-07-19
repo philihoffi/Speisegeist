@@ -25,6 +25,7 @@ public class RecipeService {
 
     private final RecipeRepository recipeRepository;
     private final RecipeGeneratorService recipeGeneratorService;
+    private final IngredientService ingredientService;
 
     @Value("${app.version:1.0}")
     private String appVersion;
@@ -104,7 +105,7 @@ public class RecipeService {
 
         if (request.ingredients() != null) {
             List<RecipeIngredient> ingredients = request.ingredients().stream()
-                    .map(IngredientDto::toEntity).toList();
+                    .map(this::toRecipeIngredient).toList();
             recipe.setIngredients(new ArrayList<>(ingredients));
         }
         if (request.steps() != null) {
@@ -112,5 +113,15 @@ public class RecipeService {
                     .map(StepDto::toEntity).toList();
             recipe.setSteps(new ArrayList<>(steps));
         }
+    }
+
+    /** Mappt eine DTO-Zutat auf eine {@link RecipeIngredient} und verknüpft sie mit dem Katalog. */
+    private RecipeIngredient toRecipeIngredient(IngredientDto dto) {
+        return RecipeIngredient.builder()
+                .ingredient(ingredientService.resolve(dto.name(), dto.warengruppe()))
+                .quantity(dto.quantity())
+                .unit(dto.unit())
+                .notes(dto.notes())
+                .build();
     }
 }

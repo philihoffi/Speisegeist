@@ -1,5 +1,6 @@
 package com.philipphofmann.backend.repository;
 
+import com.philipphofmann.backend.entity.Ingredient;
 import com.philipphofmann.backend.entity.Recipe;
 import com.philipphofmann.backend.entity.RecipeIngredient;
 import jakarta.persistence.EntityManager;
@@ -31,10 +32,12 @@ class RecipeRepositoryTest {
     @Test
     void findByUserIdAndSearch_findsByIngredientName_caseInsensitive() {
         UUID userId = UUID.randomUUID();
+        Ingredient tofu = Ingredient.builder().name("Tofu").build();
+        em.persist(tofu);
         Recipe recipe = Recipe.builder()
                 .userId(userId)
                 .name("Gemüsepfanne")
-                .ingredients(List.of(RecipeIngredient.builder().name("Tofu").build()))
+                .ingredients(List.of(RecipeIngredient.builder().ingredient(tofu).build()))
                 .build();
         em.persist(recipe);
         em.flush();

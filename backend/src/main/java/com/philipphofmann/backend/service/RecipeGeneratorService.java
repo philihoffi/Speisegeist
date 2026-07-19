@@ -34,6 +34,7 @@ import java.util.Set;
 public class RecipeGeneratorService {
 
     private final OpenRouterService openRouterService;
+    private final IngredientService ingredientService;
     private final ObjectMapper objectMapper;
 
     @Value("${openrouter.api.retry-max-attempts:3}")
@@ -196,11 +197,12 @@ public class RecipeGeneratorService {
 
             List<RecipeIngredient> ingredients = new ArrayList<>();
             for (JsonNode i : node.path("ingredients")) {
+                String name = i.path("name").asText();
+                String warengruppe = i.hasNonNull("warengruppe") ? i.path("warengruppe").asText() : null;
                 ingredients.add(RecipeIngredient.builder()
-                        .name(i.path("name").asText())
+                        .ingredient(ingredientService.resolve(name, warengruppe))
                         .quantity(i.hasNonNull("quantity") ? i.path("quantity").asDouble() : null)
                         .unit(i.hasNonNull("unit") ? i.path("unit").asText() : null)
-                        .warengruppe(i.hasNonNull("warengruppe") ? i.path("warengruppe").asText() : null)
                         .notes(i.hasNonNull("notes") ? i.path("notes").asText() : null)
                         .build());
             }
