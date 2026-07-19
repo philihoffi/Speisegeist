@@ -1,14 +1,32 @@
 .auth-container {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  padding: 16px;
+  padding: 24px;
+  gap: 20px;
+}
+
+.auth-brand {
+  text-align: center;
+
+  h1 {
+    margin: 6px 0 0;
+  }
+
+  .geist-mark {
+    filter: drop-shadow(0 10px 16px rgba(108, 74, 224, 0.28));
+  }
 }
 
 .auth-card {
   width: 100%;
   max-width: 400px;
+  border: 1px solid var(--sg-border);
+  box-shadow: var(--shadow-md);
+  border-radius: var(--radius-lg);
+  padding: 8px;
 }
 
 .full-width {
@@ -16,7 +34,8 @@
 }
 
 .error-message {
-  color: #d32f2f;
+  color: var(--sg-coral);
+  font-weight: 700;
   margin-bottom: 12px;
   font-size: 0.9rem;
 }

@@ -1,7 +1,6 @@
 .library {
   max-width: 1200px;
-  margin: 0 auto;
-  padding: 24px 16px;
+  padding: 28px 28px 36px;
   text-align: center;
 }
 
@@ -54,7 +53,8 @@ mat-paginator {
 
 .empty {
   text-align: center;
-  color: rgba(0, 0, 0, 0.5);
+  color: var(--sg-ink-soft);
+  font-weight: 600;
   padding: 48px 24px;
 
   p {
@@ -63,10 +63,15 @@ mat-paginator {
 }
 
 .empty-icon {
-  font-size: 48px;
-  width: 48px;
-  height: 48px;
-  opacity: 0.4;
+  font-size: 56px;
+  width: 56px;
+  height: 56px;
+  color: var(--sg-primary);
+  opacity: 0.5;
+}
+
+.recipe-grid {
+  gap: 20px;
 }
 
 .empty-actions {

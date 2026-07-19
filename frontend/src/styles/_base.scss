@@ -1,0 +1,55 @@
+// ============================================================================
+//  BASE — reset, typography, page background & page shells.
+//  Colours come only from tokens (see _theme.scss). No literals here.
+// ============================================================================
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--sg-font-body);
+  color: var(--sg-ink);
+  background-color: var(--sg-bg);
+  background-image: var(--sg-page-bg);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+// Headings & brand get the rounded brand face
+h1, h2, h3, .brand {
+  font-family: var(--sg-font-brand);
+  font-weight: 600;
+  color: var(--sg-ink);
+  letter-spacing: -0.01em;
+}
+h1 { font-size: clamp(1.9rem, 1.3rem + 2.4vw, 2.9rem); line-height: 1.1; }
+h2 { font-size: 1.35rem; }
+
+// --- Page shells — playful cards floating on the candy background ----------
+.dashboard,
+.library,
+.generator,
+.manual,
+.detail {
+  position: relative;
+  background: var(--sg-surface);
+  border: 1px solid var(--sg-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  margin: 28px auto !important;
+}
+
+// Generator & manual wrap their form in a card inside the shell — flatten it
+// so we don't get a card-in-a-card.
+.generator > .mat-mdc-card,
+.manual > .mat-mdc-card {
+  box-shadow: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+}

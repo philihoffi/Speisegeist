@@ -1,0 +1,101 @@
+// ============================================================================
+//  DESIGN SCHEME — „Playful Geist"
+//  ---------------------------------------------------------------------------
+//  This is the ONE file you swap to reskin the whole app.
+//  Everything else (base, material, components) only consumes the tokens and
+//  the two mixins defined here via var() / @include — no colours live anywhere
+//  else. To create a new scheme, copy this file, change the values, and point
+//  the `@use` in `src/styles.scss` at your copy.
+//
+//  Token contract every scheme must provide (consumed across the codebase):
+//    Colours : --sg-primary --sg-primary-strong --sg-primary-2 --sg-primary-rgb
+//              --sg-mint --sg-sun --sg-coral --sg-coral-rgb
+//              --sg-ink --sg-ink-soft --sg-bg --sg-surface --sg-surface-2
+//              --sg-border --sg-danger-text
+//    Fonts   : --sg-font-brand --sg-font-body
+//    Gradient: --sg-header-gradient --sg-primary-gradient --sg-accent-gradient
+//              --sg-page-bg
+//    Shape   : --radius-lg --radius-md --radius-sm --radius-pill
+//    Shadow  : --shadow-sm --shadow-md --shadow-primary --shadow-primary-hover
+//    Scheme  : color-scheme
+//  Plus the Angular Material M3 palette/typography via `material-theme`.
+// ============================================================================
+@use '@angular/material' as mat;
+
+// --- Angular Material M3 palette + typography (compile-time choices) ---------
+@mixin material-theme {
+  @include mat.theme((
+    color: (
+      primary: mat.$violet-palette,
+      tertiary: mat.$spring-green-palette,
+    ),
+    typography: (
+      brand-family: 'Fredoka, "Nunito", sans-serif',
+      plain-family: 'Nunito, "Segoe UI", sans-serif',
+      bold-weight: 700,
+      medium-weight: 600,
+      regular-weight: 400,
+    ),
+    density: 0,
+  ));
+}
+
+// --- Runtime design tokens ---------------------------------------------------
+@mixin tokens {
+  // Brand colours
+  --sg-primary:        #6C4AE0;
+  --sg-primary-strong: #5A34D6;
+  --sg-primary-2:      #8257F0; // mid gradient stop
+  --sg-primary-rgb:    108, 74, 224;
+  --sg-mint:           #17C3B2;
+  --sg-sun:            #FFC93C;
+  --sg-coral:          #FF6B6B;
+  --sg-coral-rgb:      255, 107, 107;
+
+  // Neutrals / surfaces
+  --sg-ink:         #2A1F45;
+  --sg-ink-soft:    #6E6486;
+  --sg-bg:          #F4F1FD;
+  --sg-surface:     #FFFFFF;
+  --sg-surface-2:   #EFE9FC;
+  --sg-border:      rgba(var(--sg-primary-rgb), 0.16);
+  --sg-danger-text: #C4304A;
+
+  // Typefaces
+  --sg-font-brand: 'Fredoka', 'Nunito', sans-serif;
+  --sg-font-body:  'Nunito', 'Segoe UI', sans-serif;
+
+  // Gradients
+  --sg-header-gradient:  linear-gradient(100deg, var(--sg-primary) 0%, var(--sg-primary-2) 60%, var(--sg-mint) 130%);
+  --sg-primary-gradient: linear-gradient(120deg, var(--sg-primary) 0%, var(--sg-primary-2) 100%);
+  --sg-accent-gradient:  linear-gradient(90deg, var(--sg-primary), var(--sg-mint), var(--sg-sun));
+
+  // Page background — the candy-sky colour blobs the „Geist" floats in
+  --sg-page-bg:
+    radial-gradient(38% 30% at 12% 8%,  rgba(var(--sg-primary-rgb), 0.20), transparent 70%),
+    radial-gradient(34% 28% at 88% 12%, rgba(23, 195, 178, 0.18), transparent 70%),
+    radial-gradient(40% 34% at 78% 92%, rgba(255, 201, 60, 0.18), transparent 70%),
+    radial-gradient(30% 26% at 20% 88%, rgba(var(--sg-coral-rgb), 0.14), transparent 70%);
+
+  // Shape
+  --radius-lg:   26px;
+  --radius-md:   18px;
+  --radius-sm:   12px;
+  --radius-pill: 999px;
+
+  // Elevation
+  --shadow-sm:            0 2px 10px rgba(42, 31, 69, 0.08);
+  --shadow-md:            0 12px 32px rgba(60, 40, 120, 0.16);
+  --shadow-primary:       0 6px 18px rgba(var(--sg-primary-rgb), 0.35);
+  --shadow-primary-hover: 0 12px 26px rgba(var(--sg-primary-rgb), 0.45);
+
+  // Spacing scale
+  --sp-xs: 4px;
+  --sp-sm: 8px;
+  --sp-md: 16px;
+  --sp-lg: 24px;
+  --sp-xl: 40px;
+
+  // Light / dark hint for form controls & scrollbars
+  color-scheme: light;
+}

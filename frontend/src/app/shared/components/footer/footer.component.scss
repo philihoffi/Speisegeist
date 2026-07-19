@@ -4,17 +4,18 @@
 
 .app-footer {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
-  padding: 16px 24px;
+  padding: 20px 24px;
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.7);
+  font-weight: 600;
+  color: var(--sg-ink-soft);
 
   a {
-    color: rgba(255, 255, 255, 0.85);
-  text-decoration: none;
+    color: var(--sg-primary);
+    text-decoration: none;
 
     &:hover {
       text-decoration: underline;

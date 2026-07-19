@@ -1,0 +1,21 @@
+// ============================================================================
+//  UTILITIES — helpers, the floating ghost mark & motion.
+//  Colours come only from tokens (see _theme.scss). No literals here.
+// ============================================================================
+
+.on-dark { color: rgba(255, 255, 255, 0.92); }
+
+// Little floating ghost used across brand marks
+.geist-mark {
+  display: inline-block;
+  animation: geist-float 3.5s ease-in-out infinite;
+}
+@keyframes geist-float {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50%      { transform: translateY(-5px) rotate(2deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .geist-mark { animation: none; }
+  * { transition: none !important; }
+}

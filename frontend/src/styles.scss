@@ -1,0 +1,24 @@
+// ============================================================================
+//  Speisegeist — global stylesheet entry point
+//  ---------------------------------------------------------------------------
+//  The whole visual design is composed from partials in `src/styles/`:
+//
+//    styles/_theme.scss      ← THE colour scheme. Swap this one file to reskin.
+//    styles/_base.scss       ← reset, typography, page background & shells
+//    styles/_material.scss   ← Angular Material component overrides
+//    styles/_utilities.scss  ← helpers, ghost mark, motion
+//
+//  base/material/utilities contain NO colours — they only read `var(--sg-*)`
+//  tokens produced by the theme. To try another look, point the `as theme`
+//  import below at a different scheme file (e.g. `styles/themes/warm`).
+// ============================================================================
+@use 'styles/theme' as theme;
+@use 'styles/base';
+@use 'styles/material';
+@use 'styles/utilities';
+
+// Wire the active scheme onto the document root.
+html {
+  @include theme.material-theme; // Angular Material M3 palette + typography
+  @include theme.tokens;         // runtime --sg-* / --radius-* / --shadow-* vars
+}

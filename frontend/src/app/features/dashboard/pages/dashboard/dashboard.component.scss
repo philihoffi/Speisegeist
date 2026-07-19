@@ -1,37 +1,53 @@
 .dashboard {
   max-width: 1200px;
-  margin: 0 auto;
-  padding: 24px 16px;
+  padding: 24px 24px 40px;
 }
 
 .hero {
   text-align: center;
-  padding: 48px 0;
+  padding: 40px 0 32px;
 
   h1 {
-    margin-bottom: 24px;
+    margin: 8px 0 8px;
   }
+}
+
+.hero-ghost {
+  filter: drop-shadow(0 10px 16px rgba(108, 74, 224, 0.28));
+}
+
+.hero-sub {
+  color: var(--sg-ink-soft);
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 auto 28px;
+  max-width: 460px;
 }
 
 .actions {
   display: flex;
-  gap: 16px;
+  gap: 14px;
   justify-content: center;
   flex-wrap: wrap;
 
   mat-icon {
-    margin-right: 8px;
+    margin-right: 6px;
   }
+}
+
+.recent h2 {
+  margin: 8px 0 16px;
 }
 
 .recipe-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
+  gap: 20px;
 }
 
 .empty {
   text-align: center;
-  color: rgba(0, 0, 0, 0.5);
-  padding: 24px;
+  color: var(--sg-ink-soft);
+  font-weight: 600;
+  padding: 32px;
 }

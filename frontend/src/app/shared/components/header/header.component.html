@@ -1,14 +1,35 @@
 <mat-toolbar color="primary">
-  <a routerLink="/" class="brand"><mat-icon>restaurant</mat-icon> Speisegeist</a>
+  <a routerLink="/" class="brand">
+    <svg class="geist-mark" viewBox="0 0 40 44" width="30" height="33" aria-hidden="true">
+      <path fill="currentColor" d="M20 2C11 2 5 8.5 5 18v20c0 1.7 2 2.6 3.3 1.4l2.4-2.1c.8-.7 2-.7 2.8 0l2.4 2.1c.8.7 2 .7 2.8 0l2.4-2.1c.8-.7 2-.7 2.8 0l2.4 2.1c1.3 1.2 3.3.3 3.3-1.4V18C35 8.5 29 2 20 2Z"/>
+      <circle cx="15" cy="19" r="2.4" fill="var(--sg-ink)"/>
+      <circle cx="25" cy="19" r="2.4" fill="var(--sg-ink)"/>
+      <ellipse cx="20" cy="25" rx="2.2" ry="1.5" fill="var(--sg-coral)"/>
+    </svg>
+    <span>Speisegeist</span>
+  </a>
   <span class="spacer"></span>
   @if (auth.isAuthenticated$ | async) {
-    <a mat-button routerLink="/recipes/generate">Generieren</a>
-    <a mat-button routerLink="/recipes/new">Manuell erfassen</a>
-    <a mat-button routerLink="/recipes/library">Bibliothek</a>
-    <button mat-icon-button [matMenuTriggerFor]="userMenu">
+    <span class="nav-links">
+      <a mat-button routerLink="/recipes/generate">Generieren</a>
+      <a mat-button routerLink="/recipes/new">Manuell erfassen</a>
+      <a mat-button routerLink="/recipes/library">Bibliothek</a>
+    </span>
+    <button mat-icon-button [matMenuTriggerFor]="userMenu" aria-label="Menü">
       <mat-icon>account_circle</mat-icon>
     </button>
     <mat-menu #userMenu="matMenu">
+      <div class="menu-nav">
+        <a mat-menu-item routerLink="/recipes/generate">
+          <mat-icon>auto_awesome</mat-icon> Generieren
+        </a>
+        <a mat-menu-item routerLink="/recipes/new">
+          <mat-icon>edit_note</mat-icon> Manuell erfassen
+        </a>
+        <a mat-menu-item routerLink="/recipes/library">
+          <mat-icon>menu_book</mat-icon> Bibliothek
+        </a>
+      </div>
       @if (auth.currentUser$ | async; as user) {
         <div class="user-email">{{ user.email }}</div>
       }
