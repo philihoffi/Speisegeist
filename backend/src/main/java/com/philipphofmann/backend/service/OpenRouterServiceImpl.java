@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -211,5 +212,78 @@ public class OpenRouterServiceImpl implements OpenRouterService {
                             + "). Erhöhe openrouter.max-tokens.");
         }
         return content;
+    }
+
+    @Override
+    public void streamComplete(String systemPrompt, List<Message> messages, Object responseFormat,
+                               StreamEventHandler handler) throws IOException {
+        List<Map<String, Object>> payloadMessages = new ArrayList<>();
+        if (systemPrompt != null && !systemPrompt.isBlank()) {
+            payloadMessages.add(Map.of("role", "system", "content", systemPrompt));
+        }
+        for (Message m : messages) {
+            payloadMessages.add(Map.of("role", m.role(), "content", m.content()));
+        }
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("model", model);
+        body.put("messages", payloadMessages);
+        body.put("max_tokens", maxTokens);
+        body.put("stream", true);
+        if (responseFormat != null) {
+            body.put("response_format", responseFormat);
+            body.put("provider", Map.of("require_parameters", true));
+        }
+
+        try {
+            java.io.InputStream responseStream = openRouterRestClient.post()
+                    .uri("/chat/completions")
+                    .body(body)
+                    .retrieve()
+                    .body(java.io.InputStream.class);
+
+            if (responseStream == null) {
+                handler.onError("Empty response from OpenRouter");
+                return;
+            }
+
+            try (java.io.BufferedReader reader = new java.io.BufferedReader(
+                    new java.io.InputStreamReader(responseStream))) {
+                String line;
+                StringBuilder fullContent = new StringBuilder();
+
+                while ((line = reader.readLine()) != null) {
+                    if (line.isBlank() || !line.startsWith("data: ")) {
+                        continue;
+                    }
+
+                    String data = line.substring(6);
+                    if (data.equals("[DONE]")) {
+                        break;
+                    }
+
+                    JsonNode json;
+                    try {
+                        json = new tools.jackson.databind.ObjectMapper().readTree(data);
+                    } catch (Exception e) {
+                        log.debug("Failed to parse stream line", e);
+                        continue;
+                    }
+
+                    JsonNode choice = json.path("choices").path(0);
+                    JsonNode delta = choice.path("delta");
+                    String content = delta.path("content").asText("");
+
+                    if (!content.isEmpty()) {
+                        fullContent.append(content);
+                        handler.onToken(content);
+                    }
+                }
+                handler.onComplete();
+            }
+        } catch (Exception e) {
+            log.error("Streaming failed", e);
+            handler.onError("Streaming error: " + e.getMessage());
+        }
     }
 }

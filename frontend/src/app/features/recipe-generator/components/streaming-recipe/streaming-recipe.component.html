@@ -1,0 +1,76 @@
+<div class="streaming-recipe-dialog">
+  <div class="dialog-header">
+    <h2>{{ recipeName() }}</h2>
+    <button mat-icon-button (click)="close()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <div class="dialog-content">
+    <!-- Loading State -->
+    @if (isLoading()) {
+      <div class="progress-section">
+        <p class="status-text">Rezept wird generiert...</p>
+        <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+      </div>
+    }
+
+    <!-- Error State -->
+    @if (errorMessage()) {
+      <div class="error-banner">
+        <mat-icon>error</mat-icon>
+        <span>{{ errorMessage() }}</span>
+      </div>
+    }
+
+    <!-- Ingredients Section -->
+    <div class="section" *ngIf="ingredients().length > 0">
+      <h3>🥘 Zutaten</h3>
+      <mat-list>
+        @for (ingredient of ingredients(); track ingredient.name) {
+          <mat-list-item>
+            <span>{{ ingredient.name }}</span>
+            <span class="quantity">{{ ingredient.quantity }} {{ ingredient.unit }}</span>
+          </mat-list-item>
+        }
+      </mat-list>
+    </div>
+
+    <!-- Steps Section -->
+    <div class="section" *ngIf="steps().length > 0">
+      <h3>👨‍🍳 Zubereitung</h3>
+      <ol class="steps-list">
+        @for (step of steps(); track step.order) {
+          <li>
+            <span class="instruction">{{ step.instruction }}</span>
+            @if (step.duration > 0) {
+              <span class="duration">⏱️ {{ step.duration }} Min</span>
+            }
+          </li>
+        }
+      </ol>
+    </div>
+
+    <!-- Empty State -->
+    @if (!isLoading() && ingredients().length === 0 && steps().length === 0 && !errorMessage()) {
+      <div class="empty-state">
+        <mat-icon>restaurant</mat-icon>
+        <p>Keine Daten erhalten</p>
+      </div>
+    }
+  </div>
+
+  <!-- Dialog Actions -->
+  @if (!isLoading() && currentRecipeId()) {
+    <div class="dialog-actions">
+      <button mat-stroked-button (click)="regenerate()">
+        <mat-icon>cached</mat-icon>
+        Variante generieren
+      </button>
+      <button mat-raised-button color="primary" (click)="saveRecipe()">
+        <mat-icon>save</mat-icon>
+        Speichern & Öffnen
+      </button>
+    </div>
+  }
+</div>

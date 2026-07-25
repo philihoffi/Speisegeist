@@ -13,6 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.UUID;
 
@@ -38,6 +39,27 @@ public class RecipeController {
             @Valid @RequestBody RecipeGenerationRequest request) {
         Recipe recipe = recipeService.generateRecipe(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(RecipeResponse.from(recipe));
+    }
+
+    /**
+     * Generates a new recipe with streaming output. The recipe is emitted as a stream
+     * of newline-delimited JSON events (ingredients, steps, complete).
+     *
+     * @param request the generation request
+     * @return a streaming response
+     */
+    @PostMapping("/generate-stream")
+    public ResponseEntity<org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody> generateStream(
+            @Valid @RequestBody RecipeGenerationRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .contentType(MediaType.valueOf("application/x-ndjson"))
+                .body(outputStream -> {
+                    try {
+                        recipeService.generateRecipeStreaming(request, outputStream);
+                    } catch (IOException e) {
+                        throw new RuntimeException("Streaming failed", e);
+                    }
+                });
     }
 
     /**

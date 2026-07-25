@@ -4,10 +4,12 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import com.philipphofmann.backend.dto.RecipeDtos.GenerationPreferences;
 import com.philipphofmann.backend.entity.CookingStep;
+import com.philipphofmann.backend.entity.DietaryRestriction;
 import com.philipphofmann.backend.entity.Recipe;
 import com.philipphofmann.backend.entity.RecipeIngredient;
 import com.philipphofmann.backend.exception.OpenRouterUnavailableException;
 import com.philipphofmann.backend.exception.RecipeGenerationException;
+import com.philipphofmann.backend.util.StreamingJsonWriter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,6 +17,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClientResponseException;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -22,6 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Orchestriert die Rezept-Generierung: baut die Prompts, ruft
@@ -258,8 +263,132 @@ public class RecipeGeneratorService {
             if (prefs.servings() != null) {
                 sb.append("\nPortionen: ").append(prefs.servings()).append(" (Mengen entsprechend skalieren)");
             }
+            if (prefs.dietaryRestrictions() != null && !prefs.dietaryRestrictions().isEmpty()) {
+                sb.append("\nErnährungseinschränkungen: ");
+                List<String> restrictions = prefs.dietaryRestrictions().stream()
+                        .map(DietaryRestriction::getDisplayName)
+                        .toList();
+                sb.append(String.join(", ", restrictions));
+            }
         }
         return sb.toString();
+    }
+
+    public void generateRecipeStreaming(List<String> ingredients, GenerationPreferences preferences,
+                                        OutputStream outputStream,
+                                        java.util.function.UnaryOperator<Recipe> persister) throws IOException {
+        String userPrompt = buildUserPrompt(ingredients, preferences);
+        StreamingJsonWriter writer = new StreamingJsonWriter(outputStream, objectMapper);
+
+        ConcurrentLinkedQueue<String> contentBuffer = new ConcurrentLinkedQueue<>();
+        RestClientResponseException lastError = null;
+
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                openRouterService.streamComplete(
+                        SYSTEM_PROMPT,
+                        List.of(OpenRouterService.Message.user(userPrompt)),
+                        RESPONSE_FORMAT,
+                        new OpenRouterService.StreamEventHandler() {
+                            @Override
+                            public void onToken(String token) throws IOException {
+                                contentBuffer.add(token);
+                                // Periodically emit progress events
+                                if (contentBuffer.size() % 10 == 0) {
+                                    writer.writeRecord("progress", Map.of(
+                                            "tokens", contentBuffer.size(),
+                                            "content", String.join("", contentBuffer)
+                                    ));
+                                }
+                            }
+
+                            @Override
+                            public void onComplete() {
+                                String fullContent = String.join("", contentBuffer);
+                                try {
+                                    Recipe recipe = parseRecipeJson(fullContent);
+                                    Recipe saved = persister.apply(recipe);
+                                    emitRecipeStreaming(saved, writer);
+                                } catch (Exception e) {
+                                    log.warn("Failed to parse streamed recipe JSON", e);
+                                    try {
+                                        writer.writeError("Failed to parse recipe: " + e.getMessage());
+                                    } catch (IOException e2) {
+                                        log.error("Failed to write error record", e2);
+                                    }
+                                }
+                            }
+
+                            @Override
+                            public void onError(String error) {
+                                try {
+                                    writer.writeError(error);
+                                } catch (IOException e) {
+                                    log.error("Failed to write error record", e);
+                                }
+                            }
+                        }
+                );
+                return;
+            } catch (RestClientResponseException e) {
+                lastError = e;
+                int status = e.getStatusCode().value();
+                if (attempt < maxAttempts && (status == 429 || status >= 500)) {
+                    sleepBackoff(attempt);
+                    continue;
+                }
+                break;
+            } catch (ResourceAccessException e) {
+                if (attempt < maxAttempts) {
+                    sleepBackoff(attempt);
+                    continue;
+                }
+                throw new OpenRouterUnavailableException("OpenRouter nicht erreichbar", e);
+            } catch (IOException e) {
+                throw e;
+            }
+        }
+
+        if (lastError != null) {
+            throw new OpenRouterUnavailableException(
+                    "OpenRouter-Anfrage fehlgeschlagen: " + lastError.getStatusCode(), lastError);
+        }
+        throw new OpenRouterUnavailableException("OpenRouter nicht erreichbar");
+    }
+
+    private void emitRecipeStreaming(Recipe recipe, StreamingJsonWriter writer) throws IOException {
+        if (recipe.getIngredients() != null) {
+            for (RecipeIngredient ing : recipe.getIngredients()) {
+                Map<String, Object> data = Map.of(
+                        "name", ing.getIngredient().getName(),
+                        "quantity", ing.getQuantity() != null ? ing.getQuantity() : 0.0,
+                        "unit", ing.getUnit() != null ? ing.getUnit() : ""
+                );
+                writer.writeRecord("ingredient", data);
+            }
+        }
+
+        if (recipe.getSteps() != null) {
+            for (int i = 0; i < recipe.getSteps().size(); i++) {
+                CookingStep step = recipe.getSteps().get(i);
+                Map<String, Object> data = Map.of(
+                        "order", i + 1,
+                        "instruction", step.getInstruction(),
+                        "duration", step.getDurationMinutes() != null ? step.getDurationMinutes() : 0
+                );
+                writer.writeRecord("step", data);
+            }
+        }
+
+        Map<String, Object> completeData = Map.of(
+                "id", recipe.getId().toString(),
+                "name", recipe.getName(),
+                "description", recipe.getDescription() != null ? recipe.getDescription() : "",
+                "servings", recipe.getServings(),
+                "cookTime", recipe.getCookTimeMinutes() != null ? recipe.getCookTimeMinutes() : 0,
+                "preparationTime", recipe.getPreparationTimeMinutes() != null ? recipe.getPreparationTimeMinutes() : 0
+        );
+        writer.writeRecord("complete", completeData);
     }
 
     private void sleepBackoff(int attempt) {

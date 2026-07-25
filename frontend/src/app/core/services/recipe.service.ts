@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, throwError } from 'rxjs';
+import { BehaviorSubject, Observable, throwError, Subject } from 'rxjs';
 import { tap, finalize, catchError } from 'rxjs/operators';
 import { Recipe, RecipeGenerationRequest, SearchFilters, PageResponse } from '../models/recipe.model';
 import { ApiService } from './api.service';
+import { AuthService } from './auth.service';
 
 /**
  * Stateful facade over {@link ApiService} for recipes. Exposes recipe lists,
@@ -25,7 +26,7 @@ export class RecipeService {
   public error$ = this.errorSubject.asObservable();
   public page$ = this.pageSubject.asObservable();
 
-  constructor(private api: ApiService) { }
+  constructor(private api: ApiService, private authService: AuthService) { }
 
   /** Loads recipes according to the given filters and publishes the result. */
   loadRecipes(filters: SearchFilters = {}): void {
@@ -72,6 +73,74 @@ export class RecipeService {
         }),
         finalize(() => this.loadingSubject.next(false))
       );
+  }
+
+  /** Generates a recipe with streaming output (NDJSON format). */
+  generateRecipeStream(ingredients: string[], preferences?: any): Observable<any> {
+    const subject = new Subject<any>();
+
+    this.loadingSubject.next(true);
+    this.errorSubject.next(null);
+
+    const request: RecipeGenerationRequest = { ingredients, preferences };
+    const token = this.authService.getToken();
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    fetch('/api/recipes/generate-stream', {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(request)
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.body?.getReader();
+      })
+      .then(reader => {
+        if (!reader) throw new Error('No reader available');
+
+        const decoder = new TextDecoder();
+        const readChunk = () => {
+          reader.read().then(({ done, value }) => {
+            if (done) {
+              subject.complete();
+              this.loadingSubject.next(false);
+              return;
+            }
+
+            const chunk = decoder.decode(value, { stream: true });
+            chunk.split('\n').forEach(line => {
+              if (line.trim()) {
+                try {
+                  const event = JSON.parse(line);
+                  subject.next(event);
+                } catch (e) {
+                  console.error('Failed to parse NDJSON line', e);
+                }
+              }
+            });
+
+            readChunk();
+          });
+        };
+
+        readChunk();
+      })
+      .catch(err => {
+        this.errorSubject.next(err.message || 'Streaming-Fehler');
+        this.loadingSubject.next(false);
+        subject.error(err);
+      });
+
+    return subject.asObservable();
   }
 
   /** Deletes a recipe and removes it from the in-memory list. */

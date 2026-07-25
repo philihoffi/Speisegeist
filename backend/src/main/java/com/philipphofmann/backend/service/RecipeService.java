@@ -14,6 +14,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -44,6 +46,22 @@ public class RecipeService {
         Recipe recipe = recipeGeneratorService.generateRecipe(request.ingredients(), request.preferences());
         recipe.setSourceVersion(appVersion);
         return recipeRepository.save(recipe);
+    }
+
+    /**
+     * Generates a new recipe with streaming output. Recipe is streamed as NDJSON
+     * to the output stream while being generated.
+     *
+     * @param request the generation request
+     * @param outputStream the output stream for NDJSON events
+     * @throws IOException if streaming fails
+     */
+    public void generateRecipeStreaming(RecipeGenerationRequest request, OutputStream outputStream) throws IOException {
+        recipeGeneratorService.generateRecipeStreaming(request.ingredients(), request.preferences(), outputStream,
+                recipe -> {
+                    recipe.setSourceVersion(appVersion);
+                    return recipeRepository.save(recipe);
+                });
     }
 
     /**

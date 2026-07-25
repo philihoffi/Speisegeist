@@ -49,6 +49,22 @@
         </mat-form-field>
       </div>
 
+      <div class="dietary-restrictions">
+        <h3>Ernährungseinschränkungen (optional)</h3>
+        <div class="restrictions-grid">
+          @for (restriction of dietaryRestrictions | keyvalue; track restriction.key) {
+            <div class="restriction-checkbox">
+              <input
+                type="checkbox"
+                [id]="'diet_' + restriction.key"
+                [checked]="restriction.value"
+                (change)="toggleDietaryRestriction(restriction.key)">
+              <label [for]="'diet_' + restriction.key">{{ restriction.key }}</label>
+            </div>
+          }
+        </div>
+      </div>
+
       <app-error-banner [message]="recipeService.error$ | async"></app-error-banner>
 
       <button mat-raised-button color="primary" class="generate-btn"

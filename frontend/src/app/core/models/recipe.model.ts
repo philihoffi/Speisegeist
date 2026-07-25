@@ -74,5 +74,6 @@ export interface RecipeGenerationRequest {
     mealType?: string;
     cookTime?: number;
     servings?: number;
+    dietaryRestrictions?: string[];
   };
 }

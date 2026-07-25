@@ -1,0 +1,155 @@
+.streaming-recipe-dialog {
+  width: 100%;
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  height: 600px;
+  max-height: 80vh;
+}
+
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--sg-border, #e0e0e0);
+
+  h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  button {
+    margin-left: auto;
+  }
+}
+
+.dialog-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+}
+
+.progress-section {
+  text-align: center;
+  padding: 40px 20px;
+
+  .status-text {
+    margin-bottom: 16px;
+    color: var(--sg-text, #1a1a1a);
+    opacity: 0.7;
+  }
+
+  mat-progress-bar {
+    margin-top: 16px;
+  }
+}
+
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background-color: #ffebee;
+  border-left: 4px solid #f44336;
+  border-radius: 4px;
+  color: #c62828;
+  margin-bottom: 16px;
+
+  mat-icon {
+    flex-shrink: 0;
+  }
+}
+
+.section {
+  margin-bottom: 24px;
+
+  h3 {
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.7;
+    margin: 0 0 12px;
+  }
+}
+
+mat-list {
+  padding: 0;
+  background: transparent;
+}
+
+mat-list-item {
+  display: flex;
+  justify-content: space-between;
+  height: auto;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--sg-border, #e0e0e0);
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  .quantity {
+    font-weight: 500;
+    font-size: 12px;
+    opacity: 0.7;
+  }
+}
+
+.steps-list {
+  list-style: decimal;
+  padding-left: 24px;
+  margin: 0;
+
+  li {
+    margin-bottom: 12px;
+    line-height: 1.6;
+    color: var(--sg-text, #1a1a1a);
+
+    .instruction {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .duration {
+      font-size: 12px;
+      opacity: 0.7;
+      display: inline-block;
+    }
+  }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  opacity: 0.5;
+
+  mat-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    margin-bottom: 16px;
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--sg-border, #e0e0e0);
+  background: var(--sg-surface, #fafafa);
+
+  button {
+    flex: 1;
+
+    mat-icon {
+      margin-right: 8px;
+    }
+  }
+}

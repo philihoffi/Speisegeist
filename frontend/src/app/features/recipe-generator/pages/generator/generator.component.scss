@@ -45,3 +45,43 @@
 .inline-spinner {
   display: inline-block;
 }
+
+.dietary-restrictions {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--sg-border, #e0e0e0);
+
+  h3 {
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.7;
+    margin: 0 0 12px;
+  }
+}
+
+.restrictions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.restriction-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--sg-primary, #7c3aed);
+  }
+
+  label {
+    cursor: pointer;
+    font-size: 13px;
+    user-select: none;
+  }
+}

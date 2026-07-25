@@ -1,6 +1,7 @@
 package com.philipphofmann.backend.dto;
 
 import com.philipphofmann.backend.entity.CookingStep;
+import com.philipphofmann.backend.entity.DietaryRestriction;
 import com.philipphofmann.backend.entity.Recipe;
 import com.philipphofmann.backend.entity.RecipeIngredient;
 import jakarta.validation.constraints.*;
@@ -29,7 +30,8 @@ public final class RecipeDtos {
             String cuisine,
             String mealType,
             Integer cookTime,
-            @Min(1) @Max(20) Integer servings) {
+            @Min(1) @Max(20) Integer servings,
+            Set<DietaryRestriction> dietaryRestrictions) {
     }
 
     /** Payload for creating or updating a recipe manually. */

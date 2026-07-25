@@ -11,12 +11,14 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatSelectModule } from '@angular/material/select';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { Subject, Subscription, of } from 'rxjs';
 import { catchError, debounceTime, distinctUntilChanged, map, switchMap } from 'rxjs/operators';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { ErrorBannerComponent } from '../../../../shared/components/error-banner/error-banner.component';
 import { RecipeService } from '../../../../core/services/recipe.service';
 import { IngredientService } from '../../../../core/services/ingredient.service';
+import { StreamingRecipeComponent } from '../../components/streaming-recipe/streaming-recipe.component';
 
 /**
  * Recipe generator page: collects ingredients and optional preferences, then
@@ -30,7 +32,7 @@ import { IngredientService } from '../../../../core/services/ingredient.service'
     CommonModule, FormsModule, HeaderComponent, ErrorBannerComponent,
     MatCardModule, MatFormFieldModule, MatInputModule, MatButtonModule,
     MatIconModule, MatChipsModule, MatSelectModule, MatAutocompleteModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule, MatDialogModule
   ],
   templateUrl: './generator.component.html',
   styleUrl: './generator.component.scss'
@@ -41,6 +43,16 @@ export class GeneratorComponent implements OnInit, OnDestroy {
   cuisine = '';
   cookTime: number | null = null;
   servings = 2;
+  dietaryRestrictions = new Map<string, boolean>([
+    ['VEGAN', false],
+    ['VEGETARISCH', false],
+    ['PESCETARISCH', false],
+    ['GLUTENFREI', false],
+    ['LAKTOSEFREI', false],
+    ['NUSSALLERGIKER', false],
+    ['KETO', false],
+    ['LOW_FODMAP', false]
+  ]);
 
   // Zoneless: filled inside the HTTP subscribe callback, hence a signal.
   suggestions = signal<string[]>([]);
@@ -51,7 +63,8 @@ export class GeneratorComponent implements OnInit, OnDestroy {
   constructor(
     public recipeService: RecipeService,
     private ingredientService: IngredientService,
-    private router: Router
+    private router: Router,
+    private dialog: MatDialog
   ) {}
 
   /** Wires the debounced catalog search feeding the autocomplete suggestions. */
@@ -108,17 +121,40 @@ export class GeneratorComponent implements OnInit, OnDestroy {
     this.ingredients.splice(index, 1);
   }
 
-  /** Builds the preferences and triggers recipe generation. */
+  /** Builds the preferences and triggers recipe generation with streaming. */
   generate(): void {
+    const selectedRestrictions = Array.from(this.dietaryRestrictions.entries())
+      .filter(([_, checked]) => checked)
+      .map(([key, _]) => key);
+
     const preferences = {
       cuisine: this.cuisine || undefined,
       cookTime: this.cookTime || undefined,
-      servings: this.servings || undefined
+      servings: this.servings || undefined,
+      dietaryRestrictions: selectedRestrictions.length > 0 ? selectedRestrictions : undefined
     };
 
-    this.recipeService.generateRecipe(this.ingredients, preferences).subscribe({
-      next: (recipe) => this.router.navigate(['/recipes', recipe.id]),
-      error: () => { /* error state handled by RecipeService.error$ */ }
+    const dialogRef = this.dialog.open(StreamingRecipeComponent, {
+      width: '90%',
+      maxWidth: '600px',
+      disableClose: false
     });
+
+    // Start streaming in the dialog
+    const componentInstance = dialogRef.componentInstance;
+    componentInstance.startStreaming(this.ingredients, preferences);
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result?.recipeId) {
+        this.router.navigate(['/recipes', result.recipeId]);
+      }
+    });
+  }
+
+  toggleDietaryRestriction(key: string): void {
+    const current = this.dietaryRestrictions.get(key);
+    if (current !== undefined) {
+      this.dietaryRestrictions.set(key, !current);
+    }
   }
 }

@@ -1,5 +1,6 @@
 package com.philipphofmann.backend.service;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -19,6 +20,19 @@ public interface OpenRouterService {
      * @return der Text-Content der ersten Choice
      */
     String complete(String systemPrompt, List<Message> messages, Object responseFormat);
+
+    /**
+     * Ruft eine Chat-Completion mit Server-Sent Events (SSE) Streaming ab.
+     * Die Callback wird für jedes Stream-Event aufgerufen.
+     *
+     * @param systemPrompt   System-Prompt (role=system)
+     * @param messages       weitere Nachrichten
+     * @param responseFormat OpenRouter {@code response_format} oder {@code null}
+     * @param onToken        Callback für jeden Token/Event
+     * @throws IOException if streaming fails
+     */
+    void streamComplete(String systemPrompt, List<Message> messages, Object responseFormat,
+                        StreamEventHandler onToken) throws IOException;
 
     /**
      * Generiert ein Bild über die OpenRouter Images-API (OpenAI-kompatibel) und lädt
@@ -57,5 +71,28 @@ public interface OpenRouterService {
         public static Message assistant(String content) {
             return new Message("assistant", content);
         }
+    }
+
+    /** Callback für Streaming-Events während der Rezept-Generierung. */
+    interface StreamEventHandler {
+        /**
+         * Called when a token/partial content is received.
+         *
+         * @param token the token content
+         * @throws IOException if handling fails
+         */
+        void onToken(String token) throws IOException;
+
+        /**
+         * Called when the stream is complete.
+         */
+        void onComplete();
+
+        /**
+         * Called when an error occurs during streaming.
+         *
+         * @param error the error message
+         */
+        void onError(String error);
     }
 }
