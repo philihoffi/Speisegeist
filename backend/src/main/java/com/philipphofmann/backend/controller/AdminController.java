@@ -1,5 +1,6 @@
 package com.philipphofmann.backend.controller;
 
+import com.philipphofmann.backend.dto.AdminDtos.StatsResponse;
 import com.philipphofmann.backend.dto.AdminDtos.UpdateRoleRequest;
 import com.philipphofmann.backend.dto.AdminDtos.UserListItem;
 import com.philipphofmann.backend.entity.User;
@@ -22,6 +23,11 @@ import java.util.UUID;
 public class AdminController {
 
     private final AdminService adminService;
+
+    @GetMapping("/stats")
+    public ResponseEntity<StatsResponse> getStats() {
+        return ResponseEntity.ok(adminService.getStats());
+    }
 
     @GetMapping("/users")
     public ResponseEntity<List<UserListItem>> listUsers() {

@@ -52,13 +52,12 @@ export const routes: Routes = [
     canActivate: [AuthGuard, AdminGuard],
     children: [
       {
-        path: 'users',
-        loadComponent: () => import('./features/admin/pages/users/users.component').then(m => m.AdminUsersComponent)
+        path: '',
+        loadComponent: () => import('./features/admin/pages/dashboard/dashboard.component').then(m => m.AdminDashboardComponent)
       },
       {
-        path: '',
-        redirectTo: 'users',
-        pathMatch: 'full'
+        path: 'users',
+        loadComponent: () => import('./features/admin/pages/users/users.component').then(m => m.AdminUsersComponent)
       }
     ]
   },

@@ -1,0 +1,139 @@
+<app-header></app-header>
+<div class="admin-dashboard">
+  <div class="page-header">
+    <h1>Admin Dashboard</h1>
+    <button mat-stroked-button (click)="load()" [disabled]="loading()">
+      <mat-icon>refresh</mat-icon> Aktualisieren
+    </button>
+  </div>
+
+  @if (loading()) {
+    <app-loading-spinner />
+  } @else if (error()) {
+    <app-error-banner [message]="error()!" (retry)="load()" />
+  } @else if (stats(); as s) {
+
+    <div class="sections-grid">
+    <!-- DB Stats -->
+    <section class="section">
+      <h2 class="section-heading">Datenbank</h2>
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-icon users">
+            <mat-icon>group</mat-icon>
+          </div>
+          <div class="stat-body">
+            <div class="stat-value">{{ s.userCount }}</div>
+            <div class="stat-label">Benutzer</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon recipes">
+            <mat-icon>menu_book</mat-icon>
+          </div>
+          <div class="stat-body">
+            <div class="stat-value">{{ s.recipeCount }}</div>
+            <div class="stat-label">Rezepte</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon ingredients">
+            <mat-icon>eco</mat-icon>
+          </div>
+          <div class="stat-body">
+            <div class="stat-value">{{ s.ingredientCount }}</div>
+            <div class="stat-label">Zutaten</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon images">
+            <mat-icon>image</mat-icon>
+          </div>
+          <div class="stat-body">
+            <div class="stat-value">{{ s.ingredientImageCount + s.recipeImageCount }}</div>
+            <div class="stat-label">Generierte Bilder</div>
+            <div class="stat-sub">{{ s.ingredientImageCount }} Zutaten · {{ s.recipeImageCount }} Rezepte</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- OpenRouter API -->
+    <section class="section">
+      <h2 class="section-heading">OpenRouter API</h2>
+
+      @if (s.openRouterKey.error) {
+        <div class="api-error">
+          <mat-icon>warning</mat-icon>
+          <span>Key-Info nicht verfügbar: {{ s.openRouterKey.error }}</span>
+        </div>
+      } @else {
+        <div class="api-card">
+          <div class="api-header">
+            <div class="api-label">
+              <mat-icon>vpn_key</mat-icon>
+              <span>{{ s.openRouterKey.label ?? 'API-Key' }}</span>
+              @if (s.openRouterKey.isFreeTier) {
+                <span class="badge free">Free Tier</span>
+              }
+            </div>
+            <div class="api-model">Text: openai/gpt-4o-mini &nbsp;·&nbsp; Bild: openai/dall-e-3</div>
+          </div>
+
+          <div class="api-stats">
+            <div class="api-stat">
+              <div class="api-stat-label">Verbrauch heute</div>
+              <div class="api-stat-value accent">{{ formatCredits(s.openRouterKey.usageCredits) }}</div>
+            </div>
+
+            <div class="api-stat">
+              <div class="api-stat-label">Tageslimit</div>
+              <div class="api-stat-value">{{ s.openRouterKey.limitCredits ? formatCredits(s.openRouterKey.limitCredits) : 'Kein Limit' }}</div>
+            </div>
+
+            @if (s.openRouterKey.rateLimitRequests) {
+              <div class="api-stat">
+                <div class="api-stat-label">Rate Limit</div>
+                <div class="api-stat-value">{{ s.openRouterKey.rateLimitRequests }} / {{ s.openRouterKey.rateLimitInterval }}</div>
+              </div>
+            }
+          </div>
+
+          @if (s.openRouterKey.limitCredits) {
+            <div class="usage-bar-wrap">
+              <div class="usage-bar-label">
+                <span>Limit-Auslastung</span>
+                <span class="pct" [class.warn]="usagePercent(s) > 80">{{ usagePercent(s) }}%</span>
+              </div>
+              <div class="usage-bar-track">
+                <div class="usage-bar-fill"
+                     [style.width.%]="usagePercent(s)"
+                     [class.warn]="usagePercent(s) > 80"
+                     [class.danger]="usagePercent(s) > 95">
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </section>
+
+    </div><!-- /sections-grid -->
+
+    <!-- Quick Links -->
+    <section class="section section-wide">
+      <h2 class="section-heading">Verwaltung</h2>
+      <div class="quick-links">
+        <a routerLink="/admin/users" class="quick-link">
+          <mat-icon>manage_accounts</mat-icon>
+          <span>Benutzerverwaltung</span>
+          <mat-icon class="arrow">chevron_right</mat-icon>
+        </a>
+      </div>
+    </section>
+
+  }
+</div>
