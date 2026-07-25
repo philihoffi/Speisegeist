@@ -50,6 +50,12 @@ public interface OpenRouterService {
     /** The configured model (e.g. for provenance metadata). */
     String getModel();
 
+    /**
+     * Returns metadata about the configured API key (usage, limit, rate limit).
+     * Returns a partial result with an error message if the call fails.
+     */
+    com.philipphofmann.backend.dto.AdminDtos.OpenRouterKeyInfo getKeyInfo();
+
     /** Das konfigurierte Bildgenerierungs-Modell. */
     String getImageModel();
 

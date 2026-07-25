@@ -1,5 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -7,6 +8,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { HttpClient } from '@angular/common/http';
 import { UserListItem } from '../../../../core/models/auth.model';
+import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { ErrorBannerComponent } from '../../../../shared/components/error-banner/error-banner.component';
 import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
 
@@ -14,8 +16,8 @@ import { LoadingSpinnerComponent } from '../../../../shared/components/loading-s
   selector: 'app-admin-users',
   standalone: true,
   imports: [
-    CommonModule, MatTableModule, MatButtonModule, MatIconModule,
-    MatSelectModule, MatDialogModule, ErrorBannerComponent, LoadingSpinnerComponent
+    CommonModule, RouterModule, MatTableModule, MatButtonModule, MatIconModule,
+    MatSelectModule, MatDialogModule, HeaderComponent, ErrorBannerComponent, LoadingSpinnerComponent
   ],
   templateUrl: './users.component.html',
   styleUrl: './users.component.scss'

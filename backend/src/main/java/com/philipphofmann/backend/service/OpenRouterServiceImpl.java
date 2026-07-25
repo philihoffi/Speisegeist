@@ -215,6 +215,37 @@ public class OpenRouterServiceImpl implements OpenRouterService {
     }
 
     @Override
+    public com.philipphofmann.backend.dto.AdminDtos.OpenRouterKeyInfo getKeyInfo() {
+        try {
+            JsonNode response = openRouterRestClient.get()
+                    .uri("/auth/key")
+                    .retrieve()
+                    .body(JsonNode.class);
+
+            if (response == null) {
+                return new com.philipphofmann.backend.dto.AdminDtos.OpenRouterKeyInfo(
+                        null, null, null, false, null, null, "Leere Antwort von OpenRouter");
+            }
+
+            JsonNode data = response.path("data");
+            String label = data.path("label").asText(null);
+            Double usage = data.path("usage").isNull() ? null : data.path("usage").asDouble();
+            Double limit = data.path("limit").isNull() ? null : data.path("limit").asDouble();
+            boolean isFreeTier = data.path("is_free_tier").asBoolean(false);
+            JsonNode rateLimit = data.path("rate_limit");
+            Integer requests = rateLimit.isMissingNode() ? null : rateLimit.path("requests").asInt();
+            String interval = rateLimit.isMissingNode() ? null : rateLimit.path("interval").asText(null);
+
+            return new com.philipphofmann.backend.dto.AdminDtos.OpenRouterKeyInfo(
+                    label, usage, limit, isFreeTier, requests, interval, null);
+        } catch (Exception e) {
+            log.warn("OpenRouter Key-Info konnte nicht abgerufen werden: {}", e.getMessage());
+            return new com.philipphofmann.backend.dto.AdminDtos.OpenRouterKeyInfo(
+                    null, null, null, false, null, null, e.getMessage());
+        }
+    }
+
+    @Override
     public void streamComplete(String systemPrompt, List<Message> messages, Object responseFormat,
                                StreamEventHandler handler) throws IOException {
         List<Map<String, Object>> payloadMessages = new ArrayList<>();
