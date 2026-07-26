@@ -1,0 +1,31 @@
+coverage:
+  status:
+    project:
+      default:
+        target: 70%
+        threshold: 2%
+    patch:
+      default:
+        target: 60%
+        threshold: 5%
+
+flags:
+  backend:
+    paths:
+      - backend/src/main/java/
+    carryforward: true
+  frontend:
+    paths:
+      - frontend/src/app/
+    carryforward: true
+
+comment:
+  layout: "reach,diff,flags,files"
+  behavior: default
+  require_changes: true
+
+ignore:
+  - "backend/src/main/java/com/philipphofmann/backend/BackendApplication.java"
+  - "backend/src/main/java/com/philipphofmann/backend/entity/**"
+  - "backend/src/main/java/com/philipphofmann/backend/dto/**"
+  - "backend/src/main/java/com/philipphofmann/backend/exception/GlobalExceptionHandler.java"

@@ -2,7 +2,9 @@
 
 [![CI](https://github.com/philihoffi/Speisegeist/actions/workflows/ci.yml/badge.svg)](https://github.com/philihoffi/Speisegeist/actions/workflows/ci.yml)
 [![CD](https://github.com/philihoffi/Speisegeist/actions/workflows/cd.yml/badge.svg)](https://github.com/philihoffi/Speisegeist/actions/workflows/cd.yml)
-[![codecov](https://codecov.io/gh/philihoffi/Speisegeist/graph/badge.svg?token=CODECOV_TOKEN)](https://codecov.io/gh/philihoffi/Speisegeist)
+[![codecov](https://codecov.io/gh/philihoffi/Speisegeist/graph/badge.svg)](https://codecov.io/gh/philihoffi/Speisegeist)
+[![Backend Coverage](https://codecov.io/gh/philihoffi/Speisegeist/graph/badge.svg?flag=backend)](https://codecov.io/gh/philihoffi/Speisegeist?flags=backend)
+[![Frontend Coverage](https://codecov.io/gh/philihoffi/Speisegeist/graph/badge.svg?flag=frontend)](https://codecov.io/gh/philihoffi/Speisegeist?flags=frontend)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.x-6DB33F?logo=springboot&logoColor=white)
 ![Angular](https://img.shields.io/badge/Angular-22-DD0031?logo=angular&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&logoColor=white)
@@ -89,6 +91,17 @@ npm test
 ```
 
 Testet: `AuthService`, `RecipeService`, `IngredientService`, `AuthGuard`, `AdminGuard`
+
+### Coverage-Übersicht
+
+| Flag | Scope |
+|------|-------|
+| `backend` | `backend/src/main/java/` (Services, Controller, Config) |
+| `frontend` | `frontend/src/app/` (Services, Guards) |
+
+Coverage-Details und PR-Diff-Kommentare: [codecov.io/gh/philihoffi/Speisegeist](https://codecov.io/gh/philihoffi/Speisegeist)
+
+[![Codecov Sunburst](https://codecov.io/gh/philihoffi/Speisegeist/graphs/sunburst.svg)](https://codecov.io/gh/philihoffi/Speisegeist)
 
 ---
 
