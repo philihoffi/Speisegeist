@@ -13,9 +13,7 @@ import java.util.UUID;
  * ingredients appear in recipes.
  */
 @Entity
-@Table(name = "ingredients", indexes = {
-        @Index(name = "idx_ingredients_warengruppe", columnList = "warengruppe")
-})
+@Table(name = "ingredients")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -31,9 +29,6 @@ public class Ingredient {
 
     @Column(nullable = false)
     private String name;
-
-    @Column(length = 100)
-    private String warengruppe;
 
     @Column(name = "normalized_name", nullable = false, length = 255)
     private String normalizedName;

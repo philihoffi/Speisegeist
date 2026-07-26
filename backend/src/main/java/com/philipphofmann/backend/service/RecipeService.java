@@ -77,9 +77,13 @@ public class RecipeService {
     public PageResponse<RecipeSummaryResponse> searchRecipes(String search, String tag, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<Recipe> result;
-        if (tag != null && !tag.isBlank()) {
+        boolean hasTag = tag != null && !tag.isBlank();
+        boolean hasSearch = search != null && !search.isBlank();
+        if (hasTag && hasSearch) {
+            result = recipeRepository.findByTagAndSearch(tag, search, pageable);
+        } else if (hasTag) {
             result = recipeRepository.findByTag(tag, pageable);
-        } else if (search != null && !search.isBlank()) {
+        } else if (hasSearch) {
             result = recipeRepository.findBySearch(search, pageable);
         } else {
             result = recipeRepository.findAll(pageable);
@@ -196,7 +200,7 @@ public class RecipeService {
      */
     private RecipeIngredient toRecipeIngredient(IngredientDto dto) {
         return RecipeIngredient.builder()
-                .ingredient(ingredientService.resolve(dto.name(), dto.warengruppe()))
+                .ingredient(ingredientService.resolve(dto.name()))
                 .quantity(dto.quantity())
                 .unit(dto.unit())
                 .notes(dto.notes())

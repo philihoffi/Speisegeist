@@ -5,7 +5,6 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { IngredientImageComponent } from '../../../../shared/components/ingredient-image/ingredient-image.component';
 import { Ingredient } from '../../../../core/models/ingredient.model';
 
@@ -14,38 +13,31 @@ import { Ingredient } from '../../../../core/models/ingredient.model';
   standalone: true,
   imports: [
     CommonModule, FormsModule, MatFormFieldModule, MatInputModule,
-    MatButtonModule, MatIconModule, MatAutocompleteModule, IngredientImageComponent
+    MatButtonModule, MatIconModule, IngredientImageComponent
   ],
   templateUrl: './ingredient-card.component.html',
   styleUrl: './ingredient-card.component.scss'
 })
 export class IngredientCardComponent {
   @Input({ required: true }) ingredient!: Ingredient;
-  @Input({ required: true }) warengruppen: string[] = [];
   @Input() editingId: string | null = null;
   @Input() saving = false;
 
   @Output() edit = new EventEmitter<Ingredient>();
   @Output() cancel = new EventEmitter<void>();
-  @Output() save = new EventEmitter<{ name: string; warengruppe: string }>();
+  @Output() save = new EventEmitter<string>();
   @Output() remove = new EventEmitter<Ingredient>();
 
   editName = '';
-  editWarengruppe = '';
 
   get isEditing(): boolean {
     return this.editingId === this.ingredient.id;
   }
 
-  enterEdit(): void {
-    this.editName = this.ingredient.name;
-    this.editWarengruppe = this.ingredient.warengruppe || '';
-  }
-
   onSave(): void {
     const name = this.editName.trim();
     if (!name) return;
-    this.save.emit({ name, warengruppe: this.editWarengruppe.trim() });
+    this.save.emit(name);
   }
 
   onCancel(): void {
@@ -53,7 +45,7 @@ export class IngredientCardComponent {
   }
 
   onEdit(): void {
-    this.enterEdit();
+    this.editName = this.ingredient.name;
     this.edit.emit(this.ingredient);
   }
 

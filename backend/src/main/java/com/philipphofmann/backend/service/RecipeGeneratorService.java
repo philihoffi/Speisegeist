@@ -29,7 +29,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
- * Orchestriert die Rezept-Generierung: baut die Prompts, ruft
+ * Orchestriert die Rezept-Generierung: baut die Prompts auf Basis der Nutzer-
+ * präferenzen (Zutaten, Küche, Ernährungseinschränkungen), ruft
  * {@link OpenRouterService} mit Retry/Backoff auf und mappt das KI-JSON auf
  * eine {@link Recipe}-Entität.
  */
@@ -45,44 +46,51 @@ public class RecipeGeneratorService {
     @Value("${openrouter.api.retry-max-attempts:3}")
     private int maxAttempts;
 
-    // The response format is already enforced via json_schema (response_format).
-    // This prompt therefore controls only content and quality, not the structure.
     private static final String SYSTEM_PROMPT = """
-            Du bist ein erfahrener Koch-Assistent für vegane Küche. Erstelle aus den \
-            angegebenen Zutaten ein vollständiges, alltagstaugliches veganes Rezept.
+            Du bist ein kreativer Koch-Assistent. Deine Aufgabe ist es, \
+            aus den genannten Zutaten ein vollständiges, alltagstaugliches und \
+            wirklich leckeres Rezept zu entwickeln.
 
-            Grundregeln:
-            - STRIKT VEGAN: keine tierischen Produkte. Nennt der Nutzer tierische Zutaten \
-            (z. B. Hähnchen, Butter, Ei, Käse, Honig), ersetze sie durch eine passende \
-            vegane Alternative und mache das im notes-Feld transparent (z. B. \
-            "Räuchertofu als Ersatz für Hähnchen").
-            - Die angegebenen Zutaten bilden den Kern des Rezepts. Du darfst sinnvoll \
-            ergänzende Zutaten hinzufügen, um ein vollwertiges Gericht zu erhalten \
-            (z. B. Gemüse, Gewürze, Bindemittel).
-            - Beachte die Nutzer-Vorgaben (Küche/Stil, Mahlzeit, maximale Kochzeit, Portionen), \
-            sofern angegeben. Die maximale Kochzeit darf nicht überschritten werden.
+            ── Pflichtregeln ──────────────────────────────────────────────────
+            Ernährungseinschränkungen aus dem Nutzer-Prompt (z. B. Vegan, Glutenfrei, Keto) \
+            haben absoluten Vorrang und dürfen unter keinen Umständen verletzt werden. \
+            Wenn "Vegan" angegeben ist: keine tierischen Produkte (kein Fleisch, kein Fisch, \
+            keine Milch, keine Eier, kein Honig, keine Gelatine) – ersetze nicht-vegane \
+            Zutaten durch die beste pflanzliche Alternative und erkläre das im notes-Feld \
+            (z. B. "Räuchertofu statt Hähnchen – gibt eine rauchige Tiefe"). \
+            Wenn keine Einschränkung angegeben ist, koche frei ohne Vorgaben.
+            Die maximale Kochzeit aus dem Nutzer-Prompt darf nicht überschritten werden.
 
-            Qualität und Präzision:
-            - Gib für jede Zutat eine realistische Menge mit metrischer Einheit an \
-            (g, ml, EL, TL, Stück, Prise) und skaliere alle Mengen auf die gewünschte Portionenzahl.
-            - Schreibe klare, konkrete Handlungsschritte in sinnvoller Reihenfolge, \
-            fortlaufend nummeriert ab stepNumber 1. Nenne, wo relevant, Temperatur, \
-            Gardauer, Zielkonsistenz und Topf-/Pfannengröße.
-            - Schätze preparationTimeMinutes (Vorbereitung) und cookTimeMinutes (Garen) \
-            getrennt und realistisch.
-            - estimatedKcal ist die geschätzte Kalorienzahl pro Portion.
+            ── Kreativität & Qualität ─────────────────────────────────────────
+            Rezeptname: Wähle einen einladenden, konkreten Namen, der Lust aufs Kochen macht \
+            (z. B. "Gerösteter Kürbis-Dhal mit Kokos-Chili" statt "Kürbissuppe"). \
+            Vermeide generische Platzhalternamen.
+            description: 1–2 lebhafte, appetitliche Sätze. Nenne Hauptaromen, Textur und \
+            was das Gericht besonders macht (z. B. "Samtige Kokosbasis trifft auf \
+            knusprigen Tempeh – ein vollwertiges Wohlfühlgericht in 30 Minuten.").
+            Baue das Rezept um die genannten Zutaten herum. Du darfst sinnvolle \
+            Ergänzungen hinzufügen (Aromagemüse, Gewürze, Bindemittel, Säurekick), \
+            aber die Kern-Zutaten des Nutzers müssen sichtbar und relevant bleiben.
 
-            Deutsche Konventionen:
-            - Alle Texte auf Deutsch, deutsche Zutaten- und Gerichtnamen.
-            - Wähle die warengruppe jeder Zutat aus dieser Liste (für die Einkaufslisten-Gruppierung): \
-            Gemüse, Obst, Getreide & Backwaren, Hülsenfrüchte, Tofu & Sojaprodukte, \
-            Nüsse & Samen, Pflanzliche Milch & Alternativen, Gewürze & Kräuter, \
-            Öle & Fette, Süßungsmittel, Konserven & Eingemachtes, Sonstiges.
-            - tags: kurze, kleingeschriebene deutsche Schlagworte (z. B. "vegan", "schnell", "proteinreich").
-            - description: 1-2 appetitliche Sätze.
+            ── Präzision & Kochhandwerk ───────────────────────────────────────
+            Mengen: Realistisch, metrisch (g, ml, EL, TL, Stück, Prise), auf die \
+            gewünschte Portionenzahl skaliert.
+            Schritte: Konkret und in Kochlogik-Reihenfolge (Prep → Hitze → Garzeit → Finish). \
+            Nenne Temperatur (°C), Zielkonsistenz, Pfannengröße und sensorische Hinweise \
+            ("bis die Zwiebeln glasig sind", "bei mittlerer Hitze 3–4 Min. anrösten"). \
+            stepNumber beginnt bei 1.
+            Zeiten: preparationTimeMinutes (nur Schneiden/Vorbereiten) und \
+            cookTimeMinutes (nur aktives Garen) getrennt und realistisch schätzen.
+            estimatedKcal: Schätzung pro Portion.
 
-            Optionale Felder ohne sinnvollen Wert auf null setzen (nicht raten). \
-            Nährwerte sind Schätzungen.""";
+            ── Deutsche Konventionen ──────────────────────────────────────────
+            Alle Texte auf Deutsch. Deutsche Zutaten- und Gerichtnamen.
+            tags: kurze, kleingeschriebene Schlagworte auf Deutsch \
+            (z. B. "schnell", "proteinreich", "einmaltopf"). \
+            Wenn eine Küche/Stil angegeben ist, muss diese exakt als Tag enthalten sein \
+            (z. B. Küche "Thailändisch" → Tag "thailändisch").
+
+            Optionale Felder ohne sinnvollen Wert auf null setzen. Nährwerte sind Schätzungen.""";
 
     /**
      * Erzwingt via OpenRouter Structured Outputs, dass die KI ausschließlich JSON
@@ -93,27 +101,26 @@ public class RecipeGeneratorService {
 
     private static Map<String, Object> buildResponseFormat() {
         Map<String, Object> ingredientProps = orderedMap(
-                "name", type("string"),
-                "quantity", nullable("number"),
-                "unit", nullable("string"),
-                "warengruppe", nullable("string"),
-                "notes", nullable("string"));
+                "name",     field("string",  "Deutscher Zutatennamen, z. B. 'Räuchertofu' oder 'Kirschtomaten'"),
+                "quantity", nullableField("number",  "Menge in der angegebenen Einheit, z. B. 200 oder 0.5. Null wenn keine sinnvolle Mengenangabe möglich."),
+                "unit",     nullableField("string",  "Metrische Einheit: g, ml, EL, TL, Stück, Prise, Bund usw. Null wenn nicht anwendbar."),
+                "notes",    nullableField("string",  "Optionale Hinweise zur Zutat, z. B. Ersatz oder Zubereitungshinweis. Null wenn nicht nötig."));
 
         Map<String, Object> stepProps = orderedMap(
-                "stepNumber", type("integer"),
-                "instruction", type("string"),
-                "durationMinutes", nullable("integer"));
+                "stepNumber",      field("integer", "Fortlaufende Schrittnummer, beginnt bei 1."),
+                "instruction",     field("string",  "Konkreter Handlungsschritt mit Temperatur, Gardauer und Zielkonsistenz wo relevant."),
+                "durationMinutes", nullableField("integer", "Zeitdauer dieses Schritts in Minuten. Null wenn keine sinnvolle Angabe möglich."));
 
         Map<String, Object> recipeProps = orderedMap(
-                "name", type("string"),
-                "description", nullable("string"),
-                "ingredients", array(object(ingredientProps)),
-                "steps", array(object(stepProps)),
-                "preparationTimeMinutes", nullable("integer"),
-                "cookTimeMinutes", nullable("integer"),
-                "servings", type("integer"),
-                "estimatedKcal", nullable("integer"),
-                "tags", array(type("string")));
+                "name",                   field("string",  "Einladender, konkreter Rezeptname der Lust aufs Kochen macht."),
+                "description",            nullableField("string",  "1-2 appetitliche Sätze: Hauptaromen, Textur und was das Gericht besonders macht."),
+                "ingredients",            array(object(ingredientProps), "Vollständige Zutatenliste mit Mengen."),
+                "steps",                  array(object(stepProps),      "Zubereitungsschritte in logischer Kochreihenfolge."),
+                "preparationTimeMinutes", nullableField("integer", "Reine Vorbereitungszeit in Minuten (Schneiden, Abwiegen usw.), ohne Garzeit."),
+                "cookTimeMinutes",        nullableField("integer", "Reine Garzeit in Minuten (Kochen, Backen, Braten), ohne Vorbereitungszeit."),
+                "servings",               field("integer", "Anzahl der Portionen auf die alle Mengen skaliert sind."),
+                "estimatedKcal",          nullableField("integer", "Geschätzte Kalorien pro Portion. Null wenn keine sinnvolle Schätzung möglich."),
+                "tags",                   array(field("string", "Kurzes deutsches Schlagwort in Kleinbuchstaben."), "Schlagworte wie 'schnell', 'proteinreich', 'asiatisch'."));
 
         return Map.of(
                 "type", "json_schema",
@@ -123,21 +130,25 @@ public class RecipeGeneratorService {
                         "schema", object(recipeProps)));
     }
 
-    private static Map<String, Object> type(String jsonType) {
-        return Map.of("type", jsonType);
+    private static Map<String, Object> field(String jsonType, String description) {
+        return orderedMap("type", jsonType, "description", description);
     }
 
-    private static Map<String, Object> nullable(String jsonType) {
-        return Map.of("type", List.of(jsonType, "null"));
+    private static Map<String, Object> nullableField(String jsonType, String description) {
+        return orderedMap("type", List.of(jsonType, "null"), "description", description);
+    }
+
+    private static Map<String, Object> array(Map<String, Object> items, String description) {
+        return orderedMap("type", "array", "items", items, "description", description);
     }
 
     private static Map<String, Object> array(Map<String, Object> items) {
-        return Map.of("type", "array", "items", items);
+        return orderedMap("type", "array", "items", items);
     }
 
     /** Objekt-Schema im strict-Modus: additionalProperties=false, alle Keys required. */
     private static Map<String, Object> object(Map<String, Object> properties) {
-        return Map.of(
+        return orderedMap(
                 "type", "object",
                 "additionalProperties", false,
                 "required", List.copyOf(properties.keySet()),
@@ -203,9 +214,8 @@ public class RecipeGeneratorService {
             List<RecipeIngredient> ingredients = new ArrayList<>();
             for (JsonNode i : node.path("ingredients")) {
                 String name = i.path("name").asText();
-                String warengruppe = i.hasNonNull("warengruppe") ? i.path("warengruppe").asText() : null;
                 ingredients.add(RecipeIngredient.builder()
-                        .ingredient(ingredientService.resolve(name, warengruppe))
+                        .ingredient(ingredientService.resolve(name))
                         .quantity(i.hasNonNull("quantity") ? i.path("quantity").asDouble() : null)
                         .unit(i.hasNonNull("unit") ? i.path("unit").asText() : null)
                         .notes(i.hasNonNull("notes") ? i.path("notes").asText() : null)
@@ -255,7 +265,10 @@ public class RecipeGeneratorService {
     private String buildUserPrompt(List<String> ingredients, GenerationPreferences prefs) {
         StringBuilder sb = new StringBuilder("Verfügbare Zutaten: ").append(String.join(", ", ingredients));
         if (prefs != null) {
-            if (prefs.cuisine() != null) sb.append("\nKüche/Stil: ").append(prefs.cuisine());
+            if (prefs.cuisine() != null) {
+                sb.append("\nKüche/Stil: ").append(prefs.cuisine());
+                sb.append("\n→ Tag \"").append(prefs.cuisine().toLowerCase()).append("\" muss in den tags enthalten sein.");
+            }
             if (prefs.mealType() != null) sb.append("\nMahlzeit: ").append(prefs.mealType());
             if (prefs.cookTime() != null) {
                 sb.append("\nMaximale Kochzeit: ").append(prefs.cookTime()).append(" Minuten (nicht überschreiten)");
@@ -264,11 +277,11 @@ public class RecipeGeneratorService {
                 sb.append("\nPortionen: ").append(prefs.servings()).append(" (Mengen entsprechend skalieren)");
             }
             if (prefs.dietaryRestrictions() != null && !prefs.dietaryRestrictions().isEmpty()) {
-                sb.append("\nErnährungseinschränkungen: ");
-                List<String> restrictions = prefs.dietaryRestrictions().stream()
-                        .map(DietaryRestriction::getDisplayName)
-                        .toList();
-                sb.append(String.join(", ", restrictions));
+                sb.append("\nErnährungseinschränkungen (PFLICHT, unbedingt einhalten):");
+                for (DietaryRestriction r : prefs.dietaryRestrictions()) {
+                    sb.append("\n- ").append(r.getDisplayName())
+                      .append(": ").append(r.getDescription());
+                }
             }
         }
         return sb.toString();

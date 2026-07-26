@@ -24,7 +24,6 @@ export interface RecipeIngredient {
   name: string;
   quantity?: number;
   unit?: string;
-  warengruppe?: string;
   notes?: string;
 }
 
@@ -56,7 +55,6 @@ export interface IngredientDraft {
   name: string;
   quantity: number | null;
   unit: string;
-  warengruppe: string;
   notes: string;
 }
 

@@ -2,7 +2,7 @@ import { IngredientDraft, RecipeIngredient, StepDraft, CookingStep } from '../mo
 
 /** Returns a blank ingredient draft for a new form row. */
 export function emptyIngredientDraft(): IngredientDraft {
-  return { name: '', quantity: null, unit: '', warengruppe: '', notes: '' };
+  return { name: '', quantity: null, unit: '', notes: '' };
 }
 
 /** Returns a blank cooking-step draft for a new form row. */
@@ -16,7 +16,6 @@ export function toIngredientDrafts(ingredients: RecipeIngredient[]): IngredientD
     name: i.name,
     quantity: i.quantity ?? null,
     unit: i.unit || '',
-    warengruppe: i.warengruppe || '',
     notes: i.notes || ''
   }));
 }
@@ -34,7 +33,6 @@ export function buildIngredientsPayload(rows: IngredientDraft[]) {
       name: i.name.trim(),
       quantity: i.quantity ?? undefined,
       unit: i.unit.trim() || undefined,
-      warengruppe: i.warengruppe.trim() || undefined,
       notes: i.notes.trim() || undefined
     }));
 }

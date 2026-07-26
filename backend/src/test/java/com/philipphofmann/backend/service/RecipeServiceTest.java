@@ -89,11 +89,11 @@ class RecipeServiceTest {
         Recipe existing = Recipe.builder().name("Old").tags(Set.of("vegan")).build();
         when(recipeRepository.findById(any())).thenReturn(Optional.of(existing));
         when(recipeRepository.save(any())).thenAnswer(i -> i.getArgument(0));
-        when(ingredientService.resolve(any(), any()))
+        when(ingredientService.resolve(any()))
                 .thenAnswer(i -> Ingredient.builder().name(i.getArgument(0)).build());
 
         RecipeRequest full = new RecipeRequest("New", "desc",
-                List.of(new IngredientDto("Tomate", 2.0, "Stück", "Gemüse", null)),
+                List.of(new IngredientDto("Tomate", 2.0, "Stück", null)),
                 List.of(new StepDto(1, "Kochen", 5)),
                 10, 20, 4, 500, Set.of("schnell"));
         Recipe updated = recipeService.updateRecipe(UUID.randomUUID(), full);
@@ -107,11 +107,11 @@ class RecipeServiceTest {
     @Test
     void createRecipe_manualRequestBuildsCompleteEntity() {
         when(recipeRepository.save(any())).thenAnswer(i -> i.getArgument(0));
-        when(ingredientService.resolve(any(), any()))
+        when(ingredientService.resolve(any()))
                 .thenAnswer(i -> Ingredient.builder().name(i.getArgument(0)).build());
 
         RecipeRequest request = new RecipeRequest("Tofu-Pfanne", "Schnell",
-                List.of(new IngredientDto("Tofu", 200.0, "g", "Kühlregal", null)),
+                List.of(new IngredientDto("Tofu", 200.0, "g", null)),
                 List.of(new StepDto(1, "Anbraten", 5)),
                 null, 15, 2, 450, Set.of("vegan"));
 

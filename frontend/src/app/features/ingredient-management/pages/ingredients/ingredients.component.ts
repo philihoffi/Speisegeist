@@ -4,10 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { Subject, Subscription, debounceTime, distinctUntilChanged } from 'rxjs';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { ErrorBannerComponent } from '../../../../shared/components/error-banner/error-banner.component';
@@ -17,8 +15,8 @@ import { Ingredient } from '../../../../core/models/ingredient.model';
 import { IngredientCardComponent } from '../../components/ingredient-card/ingredient-card.component';
 
 /**
- * Ingredient management page: searchable, warengruppe-filterable list of the
- * global ingredient catalog with inline create, edit, and delete.
+ * Ingredient management page: searchable list of the global ingredient catalog
+ * with inline create, edit, and delete.
  */
 @Component({
   selector: 'app-ingredients',
@@ -26,20 +24,16 @@ import { IngredientCardComponent } from '../../components/ingredient-card/ingred
   imports: [
     CommonModule, FormsModule, HeaderComponent, ErrorBannerComponent, LoadingSpinnerComponent,
     IngredientCardComponent,
-    MatCardModule, MatFormFieldModule, MatInputModule, MatSelectModule,
-    MatButtonModule, MatIconModule, MatAutocompleteModule
+    MatCardModule, MatFormFieldModule, MatInputModule,
+    MatButtonModule, MatIconModule
   ],
   templateUrl: './ingredients.component.html',
   styleUrl: './ingredients.component.scss'
 })
 export class IngredientsComponent implements OnInit, OnDestroy {
   searchTerm = '';
-  selectedWarengruppe: string | null = null;
-
   newName = '';
-  newWarengruppe = '';
 
-  warengruppen = signal<string[]>([]);
   editingId = signal<string | null>(null);
   saving = signal(false);
 
@@ -50,7 +44,6 @@ export class IngredientsComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.load();
-    this.loadWarengruppen();
     this.subscriptions.add(
       this.search$.pipe(
         debounceTime(300),
@@ -68,26 +61,16 @@ export class IngredientsComponent implements OnInit, OnDestroy {
     this.search$.next(term);
   }
 
-  onWarengruppeChange(warengruppe: string | null): void {
-    this.selectedWarengruppe = warengruppe;
-    this.load();
-  }
-
   addIngredient(): void {
     const name = this.newName.trim();
     if (!name) return;
 
     this.saving.set(true);
-    this.ingredientService.createIngredient({
-      name,
-      warengruppe: this.newWarengruppe.trim() || undefined
-    }).subscribe({
+    this.ingredientService.createIngredient({ name }).subscribe({
       next: () => {
         this.newName = '';
-        this.newWarengruppe = '';
         this.saving.set(false);
         this.load();
-        this.loadWarengruppen();
       },
       error: () => this.saving.set(false)
     });
@@ -102,16 +85,12 @@ export class IngredientsComponent implements OnInit, OnDestroy {
     this.editingId.set(null);
   }
 
-  saveEdit(ingredient: Ingredient, data: { name: string; warengruppe: string }): void {
+  saveEdit(ingredient: Ingredient, name: string): void {
     this.saving.set(true);
-    this.ingredientService.updateIngredient(ingredient.id, {
-      name: data.name,
-      warengruppe: data.warengruppe || undefined
-    }).subscribe({
+    this.ingredientService.updateIngredient(ingredient.id, { name }).subscribe({
       next: () => {
         this.editingId.set(null);
         this.saving.set(false);
-        this.loadWarengruppen();
       },
       error: () => this.saving.set(false)
     });
@@ -121,10 +100,6 @@ export class IngredientsComponent implements OnInit, OnDestroy {
     if (!confirm(`Zutat "${ingredient.name}" wirklich löschen?`)) return;
 
     this.ingredientService.deleteIngredient(ingredient.id).subscribe({
-      next: () => {
-        this.load();
-        this.loadWarengruppen();
-      },
       error: () => { /* error state handled by IngredientService.error$ */ }
     });
   }
@@ -132,16 +107,8 @@ export class IngredientsComponent implements OnInit, OnDestroy {
   private load(): void {
     this.ingredientService.loadIngredients({
       search: this.searchTerm || undefined,
-      warengruppe: this.selectedWarengruppe || undefined,
       page: 0,
       size: 500
-    });
-  }
-
-  private loadWarengruppen(): void {
-    this.ingredientService.loadWarengruppen().subscribe({
-      next: (groups) => this.warengruppen.set(groups),
-      error: () => { /* filter options are non-critical */ }
     });
   }
 }

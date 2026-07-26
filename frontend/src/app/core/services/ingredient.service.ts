@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { BehaviorSubject, Observable, throwError } from 'rxjs';
+import { BehaviorSubject, Observable, Subject, throwError } from 'rxjs';
 import { tap, finalize, catchError } from 'rxjs/operators';
 import { Ingredient, IngredientFilters, IngredientRequest } from '../models/ingredient.model';
 import { PageResponse } from '../models/recipe.model';
@@ -20,11 +20,14 @@ export class IngredientService {
   private pageSubject = new BehaviorSubject<PageResponse<Ingredient> | null>(null);
   private loadingSubject = new BehaviorSubject<boolean>(false);
   private errorSubject = new BehaviorSubject<string | null>(null);
+  private catalogChangedSubject = new Subject<void>();
 
   public ingredients$ = this.ingredientListSubject.asObservable();
   public page$ = this.pageSubject.asObservable();
   public loading$ = this.loadingSubject.asObservable();
   public error$ = this.errorSubject.asObservable();
+  /** Emits whenever an ingredient is created or deleted (admin stats can subscribe). */
+  public catalogChanged$ = this.catalogChangedSubject.asObservable();
 
   constructor(private http: HttpClient) { }
 
@@ -37,16 +40,10 @@ export class IngredientService {
   searchIngredients(filters: IngredientFilters): Observable<PageResponse<Ingredient>> {
     let params = new HttpParams();
     if (filters.search) params = params.set('search', filters.search);
-    if (filters.warengruppe) params = params.set('warengruppe', filters.warengruppe);
     if (filters.page !== undefined) params = params.set('page', filters.page);
     if (filters.size !== undefined) params = params.set('size', filters.size);
 
     return this.http.get<PageResponse<Ingredient>>(this.ingredientsUrl, { params });
-  }
-
-  /** Loads all distinct warengruppen present in the catalog. */
-  loadWarengruppen(): Observable<string[]> {
-    return this.http.get<string[]>(`${this.ingredientsUrl}/warengruppen`);
   }
 
   /** Loads catalog ingredients according to the filters and publishes the result. */
@@ -78,6 +75,7 @@ export class IngredientService {
           const updated = [...this.ingredientListSubject.value, created]
             .sort((a, b) => a.name.localeCompare(b.name, 'de'));
           this.ingredientListSubject.next(updated);
+          this.catalogChangedSubject.next();
         }),
         catchError(err => this.publishError(err, 'Zutat konnte nicht angelegt werden.'))
       );
@@ -104,6 +102,7 @@ export class IngredientService {
         tap(() => {
           const updated = this.ingredientListSubject.value.filter(i => i.id !== id);
           this.ingredientListSubject.next(updated);
+          this.catalogChangedSubject.next();
         }),
         catchError(err => this.publishError(err, 'Zutat konnte nicht gelöscht werden.'))
       );

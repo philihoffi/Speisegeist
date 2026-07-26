@@ -1,12 +1,14 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { Subscription } from 'rxjs';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
 import { ErrorBannerComponent } from '../../../../shared/components/error-banner/error-banner.component';
+import { IngredientService } from '../../../../core/services/ingredient.service';
 
 interface OpenRouterKeyInfo {
   label: string | null;
@@ -34,15 +36,24 @@ interface AdminStats {
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
 })
-export class AdminDashboardComponent implements OnInit {
+export class AdminDashboardComponent implements OnInit, OnDestroy {
   stats = signal<AdminStats | null>(null);
   loading = signal(true);
   error = signal<string | null>(null);
 
-  constructor(private http: HttpClient) {}
+  private subscriptions = new Subscription();
+
+  constructor(private http: HttpClient, private ingredientService: IngredientService) {}
 
   ngOnInit(): void {
     this.load();
+    this.subscriptions.add(
+      this.ingredientService.catalogChanged$.subscribe(() => this.load())
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
   }
 
   load(): void {

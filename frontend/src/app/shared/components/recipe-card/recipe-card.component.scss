@@ -36,6 +36,13 @@
   border-radius: var(--radius-md, 12px) var(--radius-md, 12px) 0 0;
 }
 
+.description {
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 .meta {
   display: flex;
   flex-wrap: wrap;

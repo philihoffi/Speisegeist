@@ -94,52 +94,33 @@ public class IngredientService {
      * normalisation and pg_trgm similarity to avoid near-duplicates.
      */
     @Transactional
-    public Ingredient resolve(String rawName, String warengruppe) {
+    public Ingredient resolve(String rawName) {
         String name = rawName == null ? "" : rawName.trim();
         String normalized = normalize(name);
-        String normalizedWarengruppe = normalizeWarengruppe(warengruppe);
 
         var exact = ingredientRepository.findByNormalizedName(normalized);
-        if (exact.isPresent()) {
-            Ingredient existing = exact.get();
-            if (existing.getWarengruppe() == null && normalizedWarengruppe != null) {
-                existing.setWarengruppe(normalizedWarengruppe);
-            }
-            return existing;
-        }
+        if (exact.isPresent()) return exact.get();
 
         var similar = ingredientRepository.findSimilarNormalized(normalized, 0.72f);
         if (!similar.isEmpty()) {
             Ingredient best = similar.get(0);
             log.debug("Dedup '{}' → existierende '{}' (sim={})", name, best.getName(),
                     similarity(best.getNormalizedName(), normalized));
-            if (best.getWarengruppe() == null && normalizedWarengruppe != null) {
-                best.setWarengruppe(normalizedWarengruppe);
-            }
             return best;
         }
 
         return ingredientRepository.save(Ingredient.builder()
                 .name(name)
                 .normalizedName(normalized)
-                .warengruppe(normalizedWarengruppe)
                 .build());
     }
 
     @Transactional(readOnly = true)
-    public Page<Ingredient> listIngredients(String search, String warengruppe, Pageable pageable) {
-        if (warengruppe != null && !warengruppe.isBlank()) {
-            return ingredientRepository.findByWarengruppeIgnoreCaseOrderByNameAsc(warengruppe, pageable);
-        }
+    public Page<Ingredient> listIngredients(String search, Pageable pageable) {
         if (search != null && !search.isBlank()) {
             return ingredientRepository.findByNameContainingIgnoreCaseOrderByNameAsc(search, pageable);
         }
         return ingredientRepository.findAllByOrderByNameAsc(pageable);
-    }
-
-    @Transactional(readOnly = true)
-    public List<String> listWarengruppen() {
-        return ingredientRepository.findDistinctWarengruppen();
     }
 
     @Transactional(readOnly = true)
@@ -152,7 +133,6 @@ public class IngredientService {
     public Ingredient createIngredient(IngredientRequest request) {
         String name = request.name().trim();
         String normalized = normalize(name);
-        String wg = normalizeWarengruppe(request.warengruppe());
 
         List<Ingredient> similar = ingredientRepository.findSimilarNormalized(normalized, 0.72f);
         if (!similar.isEmpty()) {
@@ -162,12 +142,10 @@ public class IngredientService {
             return best;
         }
 
-        Ingredient ingredient = Ingredient.builder()
+        return ingredientRepository.save(Ingredient.builder()
                 .name(name)
                 .normalizedName(normalized)
-                .warengruppe(wg)
-                .build();
-        return ingredientRepository.save(ingredient);
+                .build());
     }
 
     @Transactional
@@ -176,7 +154,6 @@ public class IngredientService {
         String name = request.name().trim();
         existing.setName(name);
         existing.setNormalizedName(normalize(name));
-        existing.setWarengruppe(normalizeWarengruppe(request.warengruppe()));
         return ingredientRepository.save(existing);
     }
 
@@ -186,10 +163,6 @@ public class IngredientService {
             throw new IngredientNotFoundException(id);
         }
         ingredientRepository.deleteById(id);
-    }
-
-    private static String normalizeWarengruppe(String warengruppe) {
-        return (warengruppe == null || warengruppe.isBlank()) ? null : warengruppe.trim();
     }
 
     private static double similarity(String a, String b) {

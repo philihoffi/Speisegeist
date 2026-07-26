@@ -56,6 +56,7 @@ export class StreamingRecipeComponent implements OnInit, OnDestroy {
   isLoading = signal(true);
   progress = signal(0);
   recipeName = signal('Rezept wird generiert...');
+  recipeDescription = signal<string | null>(null);
   ingredients = signal<IngredientData[]>([]);
   steps = signal<StepData[]>([]);
   errorMessage = signal<string | null>(null);
@@ -122,6 +123,7 @@ export class StreamingRecipeComponent implements OnInit, OnDestroy {
       case 'complete':
         const data = event.data as CompleteData;
         this.recipeName.set(data.name);
+        this.recipeDescription.set(data.description || null);
         this.currentRecipeId.set(data.id);
         this.isLoading.set(false);
         break;
@@ -155,6 +157,7 @@ export class StreamingRecipeComponent implements OnInit, OnDestroy {
     this.errorMessage.set(null);
     this.currentRecipeId.set(null);
     this.recipeName.set('Rezept wird generiert...');
+    this.recipeDescription.set(null);
     this.isLoading.set(true);
     this.progress.set(0);
     this.startStreaming(this.lastIngredients, this.lastPreferences);

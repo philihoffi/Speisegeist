@@ -31,6 +31,15 @@
   padding: 20px 24px;
 }
 
+.recipe-description {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--sg-ink-soft, #666);
+  margin: 0 0 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--sg-border, #e0e0e0);
+}
+
 .progress-section {
   text-align: center;
   padding: 40px 20px;

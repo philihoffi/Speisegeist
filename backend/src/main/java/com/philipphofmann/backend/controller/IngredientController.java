@@ -19,7 +19,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -34,22 +33,20 @@ public class IngredientController {
     private final IngredientImageService ingredientImageService;
 
     /**
-     * Lists catalog ingredients, with optional name search and warengruppe filter.
+     * Lists catalog ingredients, with optional name search.
      *
-     * @param search      optional case-insensitive name substring
-     * @param warengruppe optional exact warengruppe filter
-     * @param page        zero-based page index
-     * @param size        page size
+     * @param search optional case-insensitive name substring
+     * @param page   zero-based page index
+     * @param size   page size
      * @return a page of ingredient responses ordered by name
      */
     @GetMapping
     public ResponseEntity<PageResponse<IngredientResponse>> list(
             @RequestParam(required = false) String search,
-            @RequestParam(required = false) String warengruppe,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size) {
         Page<Ingredient> result = ingredientService.listIngredients(
-                search, warengruppe,
+                search,
                 PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "name")));
         PageResponse<IngredientResponse> body = new PageResponse<>(
                 result.getContent().stream().map(IngredientResponse::from).toList(),
@@ -57,16 +54,6 @@ public class IngredientController {
                 result.getTotalPages(),
                 result.getNumber());
         return ResponseEntity.ok(body);
-    }
-
-    /**
-     * Lists all distinct warengruppen present in the catalog.
-     *
-     * @return the distinct warengruppen, alphabetically ordered
-     */
-    @GetMapping("/warengruppen")
-    public ResponseEntity<List<String>> listWarengruppen() {
-        return ResponseEntity.ok(ingredientService.listWarengruppen());
     }
 
     /**

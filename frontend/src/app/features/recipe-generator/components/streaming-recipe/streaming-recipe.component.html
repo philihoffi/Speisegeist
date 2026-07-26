@@ -7,6 +7,10 @@
   </div>
 
   <div class="dialog-content">
+    @if (recipeDescription()) {
+      <p class="recipe-description">{{ recipeDescription() }}</p>
+    }
+
     <!-- Loading State -->
     @if (isLoading()) {
       <div class="progress-section">

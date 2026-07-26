@@ -25,4 +25,10 @@ public interface RecipeRepository extends JpaRepository<Recipe, UUID> {
     /** Returns recipes filtered by a single tag. */
     @Query("SELECT r FROM Recipe r WHERE ?1 MEMBER OF r.tags")
     Page<Recipe> findByTag(String tag, Pageable pageable);
+
+    /** Returns recipes filtered by tag AND matching a search term (name or ingredient). */
+    @Query("SELECT DISTINCT r FROM Recipe r WHERE ?1 MEMBER OF r.tags AND ("
+            + "LOWER(r.name) LIKE LOWER(CONCAT('%', ?2, '%')) "
+            + "OR EXISTS (SELECT i FROM r.ingredients i WHERE LOWER(i.ingredient.name) LIKE LOWER(CONCAT('%', ?2, '%'))))")
+    Page<Recipe> findByTagAndSearch(String tag, String search, Pageable pageable);
 }

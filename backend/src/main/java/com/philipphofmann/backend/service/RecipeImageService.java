@@ -1,6 +1,5 @@
 package com.philipphofmann.backend.service;
 
-import com.philipphofmann.backend.entity.CookingStep;
 import com.philipphofmann.backend.entity.Recipe;
 import com.philipphofmann.backend.entity.RecipeImage;
 import com.philipphofmann.backend.entity.RecipeIngredient;
@@ -62,46 +61,31 @@ public class RecipeImageService {
     }
 
     private String buildPrompt(Recipe recipe) {
-        StringBuilder sb = new StringBuilder("Appetitliche, fotorealistische Food-Fotografie des Gerichts \"")
-                .append(recipe.getName())
-                .append("\"");
+        StringBuilder sb = new StringBuilder(
+                "Professional food photography of \"")
+                .append(recipe.getName()).append("\"");
+
         if (recipe.getDescription() != null && !recipe.getDescription().isBlank()) {
-            sb.append(": ").append(recipe.getDescription());
+            sb.append(". ").append(recipe.getDescription());
         }
 
+        // Add a few of the most visually prominent ingredients as scene cues (max 4)
         if (recipe.getIngredients() != null && !recipe.getIngredients().isEmpty()) {
-            sb.append("\n\nZutaten (exakt diese, keine weiteren erfinden): ");
-            for (RecipeIngredient ri : recipe.getIngredients()) {
-                sb.append("\n- ");
-                if (ri.getQuantity() != null) {
-                    sb.append(ri.getQuantity());
-                }
-                if (ri.getUnit() != null && !ri.getUnit().isBlank()) {
-                    sb.append(" ").append(ri.getUnit());
-                }
-                if (ri.getIngredient() != null && ri.getIngredient().getName() != null) {
-                    sb.append(" ").append(ri.getIngredient().getName());
-                }
-                if (ri.getNotes() != null && !ri.getNotes().isBlank()) {
-                    sb.append(" (").append(ri.getNotes()).append(")");
-                }
+            String cues = recipe.getIngredients().stream()
+                    .limit(4)
+                    .filter(ri -> ri.getIngredient() != null && ri.getIngredient().getName() != null)
+                    .map(ri -> ri.getIngredient().getName())
+                    .collect(java.util.stream.Collectors.joining(", "));
+            if (!cues.isBlank()) {
+                sb.append(" Featuring ").append(cues).append(".");
             }
         }
 
-        if (recipe.getSteps() != null && !recipe.getSteps().isEmpty()) {
-            sb.append("\n\nZubereitung: ");
-            for (int i = 0; i < recipe.getSteps().size(); i++) {
-                CookingStep step = recipe.getSteps().get(i);
-                if (step.getInstruction() != null && !step.getInstruction().isBlank()) {
-                    sb.append("\n").append(i + 1).append(". ").append(step.getInstruction());
-                }
-            }
-        }
-
-        sb.append("\n\nWichtig: Stelle das Gericht ausschließlich mit exakt den genannten Zutaten dar. ")
-                .append("Erfinde oder ergänze KEINE weiteren Zutaten, Garnierungen oder Beilagen, ")
-                .append("die nicht in der Zutatenliste stehen. Nur die angegebenen Zutaten dürfen sichtbar sein.")
-                .append("\nNatürliches Licht, angerichtet auf einem Teller, Draufsicht, hohe Detailschärfe.");
+        sb.append(" Elegant plating on a matte ceramic plate or rustic wooden board. ")
+                .append("Natural side lighting from the left, shallow depth of field, ")
+                .append("45-degree angle, warm and inviting atmosphere. ")
+                .append("Garnished tastefully. High-end food magazine style. ")
+                .append("No text, no watermarks, photorealistic.");
         return sb.toString();
     }
 }

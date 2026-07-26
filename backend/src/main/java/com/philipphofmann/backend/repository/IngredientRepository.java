@@ -26,13 +26,6 @@ public interface IngredientRepository extends JpaRepository<Ingredient, UUID> {
     /** Returns ingredients whose name contains the term (case-insensitive), ordered by name. */
     Page<Ingredient> findByNameContainingIgnoreCaseOrderByNameAsc(String name, Pageable pageable);
 
-    /** Returns ingredients of a given warengruppe (case-insensitive), ordered by name. */
-    Page<Ingredient> findByWarengruppeIgnoreCaseOrderByNameAsc(String warengruppe, Pageable pageable);
-
-    /** Returns all distinct warengruppen present in the catalog, ordered alphabetically. */
-    @Query("select distinct i.warengruppe from Ingredient i where i.warengruppe is not null order by i.warengruppe")
-    List<String> findDistinctWarengruppen();
-
     /** Returns ingredients with a similar normalized name (pg_trgm similarity). */
     @Query(value = """
             SELECT * FROM ingredients

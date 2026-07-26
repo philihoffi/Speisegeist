@@ -9,16 +9,6 @@
         <input matInput [(ngModel)]="editName" maxlength="255"
                (keyup.enter)="onSave()" aria-label="Name">
       </mat-form-field>
-      <mat-form-field appearance="outline" subscriptSizing="dynamic">
-        <input matInput [(ngModel)]="editWarengruppe" maxlength="100"
-               (keyup.enter)="onSave()" aria-label="Warengruppe"
-               [matAutocomplete]="editWarengruppeAuto">
-        <mat-autocomplete #editWarengruppeAuto="matAutocomplete">
-          @for (gruppe of warengruppen; track gruppe) {
-            <mat-option [value]="gruppe">{{ gruppe }}</mat-option>
-          }
-        </mat-autocomplete>
-      </mat-form-field>
     </div>
     <div class="ingredient-card__actions">
       <button mat-icon-button color="primary" (click)="onSave()"
@@ -32,12 +22,7 @@
   } @else {
     <div class="ingredient-card__main">
       <div class="ingredient-card__body">
-        <span class="ingredient-card__name">{{ ingredient.name }}</span>
-        @if (ingredient.warengruppe) {
-          <span class="warengruppe-pill">{{ ingredient.warengruppe }}</span>
-        } @else {
-          <span class="no-warengruppe">Keine Gruppe</span>
-        }
+        <span class="ingredient-card__name" [title]="ingredient.name">{{ ingredient.name }}</span>
       </div>
     </div>
     <div class="ingredient-card__meta">

@@ -95,22 +95,6 @@
   }
 }
 
-.warengruppe-pill {
-  display: inline-block;
-  background: var(--sg-surface-2);
-  color: var(--sg-primary-strong);
-  font-weight: 600;
-  font-size: 0.8rem;
-  border-radius: var(--radius-pill);
-  padding: 2px 12px;
-  width: fit-content;
-}
-
-.no-warengruppe {
-  color: var(--sg-ink-soft);
-  font-size: 0.8rem;
-  font-style: italic;
-}
 
 .delete-btn {
   color: var(--sg-danger-text);

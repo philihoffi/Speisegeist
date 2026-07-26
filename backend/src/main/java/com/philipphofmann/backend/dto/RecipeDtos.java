@@ -52,7 +52,7 @@ public final class RecipeDtos {
     }
 
     /** Ingredient representation used in recipe DTOs. */
-    public record IngredientDto(String name, Double quantity, String unit, String warengruppe, String notes) {
+    public record IngredientDto(String name, Double quantity, String unit, String notes) {
 
         public static IngredientDto from(RecipeIngredient i) {
             var ingredient = i.getIngredient();
@@ -60,7 +60,6 @@ public final class RecipeDtos {
                     ingredient != null ? ingredient.getName() : null,
                     i.getQuantity(),
                     i.getUnit(),
-                    ingredient != null ? ingredient.getWarengruppe() : null,
                     i.getNotes());
         }
     }

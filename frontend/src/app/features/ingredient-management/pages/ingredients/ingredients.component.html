@@ -9,19 +9,7 @@
       <mat-form-field appearance="outline" class="grow">
         <mat-label>Neue Zutat</mat-label>
         <input matInput name="newName" [(ngModel)]="newName"
-               placeholder="z.B. Räuchertofu" maxlength="255" #nameInput>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" class="grow">
-        <mat-label>Warengruppe (optional)</mat-label>
-        <input matInput name="newWarengruppe" [(ngModel)]="newWarengruppe"
-               placeholder="z.B. Gemüse" maxlength="100"
-               [matAutocomplete]="newWarengruppeAuto">
-        <mat-autocomplete #newWarengruppeAuto="matAutocomplete">
-          @for (gruppe of warengruppen(); track gruppe) {
-            <mat-option [value]="gruppe">{{ gruppe }}</mat-option>
-          }
-        </mat-autocomplete>
+               placeholder="z.B. Räuchertofu" maxlength="255">
       </mat-form-field>
 
       <button mat-flat-button color="primary" class="add-btn" type="submit"
@@ -35,23 +23,9 @@
   <mat-form-field appearance="outline" class="search-field">
     <mat-label>Suchen</mat-label>
     <input matInput [ngModel]="searchTerm" (ngModelChange)="onSearchChange($event)"
-           placeholder="Zutat suchen..." #searchInput>
+           placeholder="Zutat suchen...">
     <mat-icon matSuffix>search</mat-icon>
   </mat-form-field>
-
-  @if (warengruppen().length > 0) {
-    <div class="warengruppe-filter">
-      <mat-form-field appearance="outline" class="warengruppe-field">
-        <mat-label>Warengruppe</mat-label>
-        <mat-select [ngModel]="selectedWarengruppe" (ngModelChange)="onWarengruppeChange($event)">
-          <mat-option [value]="null">Alle</mat-option>
-          @for (gruppe of warengruppen(); track gruppe) {
-            <mat-option [value]="gruppe">{{ gruppe }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-    </div>
-  }
 
   <app-error-banner [message]="ingredientService.error$ | async"></app-error-banner>
 
@@ -65,7 +39,6 @@
         @for (ingredient of ingredients; track ingredient.id) {
           <app-ingredient-card
             [ingredient]="ingredient"
-            [warengruppen]="warengruppen()"
             [editingId]="editingId()"
             [saving]="saving()"
             (edit)="startEdit($event)"
@@ -77,9 +50,9 @@
       </div>
     } @else if (!(ingredientService.loading$ | async) && !(ingredientService.error$ | async)) {
       <div class="empty">
-        @if (searchTerm || selectedWarengruppe) {
+        @if (searchTerm) {
           <mat-icon class="empty-icon">search_off</mat-icon>
-          <p>Keine Zutaten zu „{{ searchTerm || selectedWarengruppe }}" gefunden.</p>
+          <p>Keine Zutaten zu „{{ searchTerm }}" gefunden.</p>
         } @else {
           <mat-icon class="empty-icon">kitchen</mat-icon>
           <p>Der Zutaten-Katalog ist noch leer. Er füllt sich automatisch mit jedem Rezept –

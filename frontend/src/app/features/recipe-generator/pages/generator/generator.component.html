@@ -8,7 +8,7 @@
         <mat-form-field appearance="outline" class="grow">
           <mat-label>Zutat hinzufügen</mat-label>
           <input matInput [ngModel]="ingredientInput" (ngModelChange)="onIngredientInputChange($event)"
-                 (keyup.enter)="addIngredient()"
+                 (keydown.enter)="onEnterIngredient()"
                  placeholder="z.B. Tofu, Tomaten, Zwiebeln"
                  [matAutocomplete]="ingredientAuto">
           <mat-autocomplete #ingredientAuto="matAutocomplete"
@@ -59,7 +59,7 @@
                 [id]="'diet_' + restriction.key"
                 [checked]="restriction.value"
                 (change)="toggleDietaryRestriction(restriction.key)">
-              <label [for]="'diet_' + restriction.key">{{ restriction.key }}</label>
+              <label [for]="'diet_' + restriction.key">{{ dietaryRestrictionLabels.get(restriction.key) ?? restriction.key }}</label>
             </div>
           }
         </div>

@@ -16,6 +16,17 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+
+  .actions {
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    flex-shrink: 0;
+  }
+
+  &:hover .actions,
+  &:focus-within .actions {
+    opacity: 1;
+  }
 }
 
 .description {

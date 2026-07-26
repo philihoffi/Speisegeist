@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -9,7 +9,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatSelectModule } from '@angular/material/select';
-import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatAutocomplete, MatAutocompleteModule, MatAutocompleteTrigger } from '@angular/material/autocomplete';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { Subject, Subscription, of } from 'rxjs';
@@ -38,6 +38,9 @@ import { StreamingRecipeComponent } from '../../components/streaming-recipe/stre
   styleUrl: './generator.component.scss'
 })
 export class GeneratorComponent implements OnInit, OnDestroy {
+  @ViewChild('ingredientAuto') ingredientAutoRef!: MatAutocomplete;
+  @ViewChild(MatAutocompleteTrigger) private autoTrigger!: MatAutocompleteTrigger;
+
   ingredientInput = '';
   ingredients: string[] = [];
   cuisine = '';
@@ -52,6 +55,17 @@ export class GeneratorComponent implements OnInit, OnDestroy {
     ['NUSSALLERGIKER', false],
     ['KETO', false],
     ['LOW_FODMAP', false]
+  ]);
+
+  readonly dietaryRestrictionLabels = new Map<string, string>([
+    ['VEGAN', 'Vegan'],
+    ['VEGETARISCH', 'Vegetarisch'],
+    ['PESCETARISCH', 'Pescetarisch'],
+    ['GLUTENFREI', 'Glutenfrei'],
+    ['LAKTOSEFREI', 'Laktosefrei'],
+    ['NUSSALLERGIKER', 'Nussallergiker'],
+    ['KETO', 'Keto'],
+    ['LOW_FODMAP', 'Low-FODMAP'],
   ]);
 
   // Zoneless: filled inside the HTTP subscribe callback, hence a signal.
@@ -104,6 +118,14 @@ export class GeneratorComponent implements OnInit, OnDestroy {
     }
     this.ingredientInput = '';
     this.suggestions.set([]);
+  }
+
+  /** Adds ingredient on Enter, unless Angular Material has a keyboard-highlighted option to select. */
+  onEnterIngredient(): void {
+    if (this.ingredientAutoRef?.isOpen && this.autoTrigger?.activeOption) {
+      return; // Let Angular Material select the highlighted option
+    }
+    this.addIngredient();
   }
 
   /** Adds the trimmed ingredient input to the ingredient list, ignoring duplicates. */
