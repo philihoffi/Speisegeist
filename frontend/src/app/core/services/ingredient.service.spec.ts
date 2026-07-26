@@ -8,7 +8,6 @@ import { PageResponse } from '../models/recipe.model';
 const mockIngredient = (name: string): Ingredient => ({
   id: crypto.randomUUID(),
   name,
-  normalizedName: name.toLowerCase(),
   createdAt: new Date().toISOString(),
 });
 

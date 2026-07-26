@@ -70,6 +70,13 @@
           "options": {
             "runner": "vitest",
             "tsConfig": "tsconfig.spec.json"
+          },
+          "configurations": {
+            "coverage": {
+              "coverage": true,
+              "coverageReporters": ["lcov", "text"],
+              "watch": false
+            }
           }
         }
       }
