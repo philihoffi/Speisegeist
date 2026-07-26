@@ -1,59 +1,57 @@
-# Frontend
+# Speisegeist — Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.0.7.
+Angular 22 SPA für den Speisegeist-Rezeptgenerator.
 
-## Development server
-
-To start a local development server, run:
+## Entwicklung
 
 ```bash
-ng serve
+npm install
+npm start        # Dev-Server auf http://localhost:4200
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Der Dev-Server leitet `/api/**` automatisch an `http://localhost:8080` weiter (Proxy-Konfiguration in `angular.json`). Das Backend muss laufen.
 
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Tests
 
 ```bash
-ng generate component component-name
+npm test         # Vitest (einmalig)
+npm test -- --watch   # Watch-Modus
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Getestet: `AuthService`, `RecipeService`, `IngredientService`, `AuthGuard`, `AdminGuard`
+
+## Build
 
 ```bash
-ng generate --help
+npm run build    # Produktions-Build → dist/frontend/browser/
 ```
 
-## Building
+Das Dockerfile baut das Artefakt automatisch und liefert es via Nginx aus.
 
-To build the project run:
+## Projektstruktur
 
-```bash
-ng build
+```
+src/app/
+  core/
+    services/       AuthService, RecipeService, IngredientService
+    guards/         AuthGuard (JWT erforderlich), AdminGuard (Rolle ADMIN)
+    interceptors/   JWT-Header bei jedem API-Request
+    models/         TypeScript-Interfaces
+  features/
+    auth/           Login, Registrierung
+    dashboard/      Startseite
+    recipe-library/ Rezeptbibliothek mit Suche und Tag-Filter
+    recipe-detail/  Rezeptdetail, Bewertung, Bearbeitung
+    recipe-generator/ KI-Generator mit Echtzeit-Streaming (SSE)
+    recipe-manual/  Manuelles Rezept anlegen
+    ingredient-management/ Zutatenkatalog
+    admin/          Admin-Dashboard, Benutzerverwaltung
+  shared/
+    components/     RecipeCard, Header, Footer, ErrorBanner, LoadingSpinner
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+## Wichtige Umgebungsdetails
 
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- **API-Prefix:** alle Requests gehen an `/api/...` (Nginx leitet im Produktions-Build weiter)
+- **Authentifizierung:** JWT im `localStorage`, wird von `AuthInterceptor` als `Authorization: Bearer …` mitgeschickt
+- **Streaming:** Rezeptgenerierung nutzt Server-Sent Events (SSE) — Nginx muss `proxy_buffering off` haben (bereits konfiguriert)
