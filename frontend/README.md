@@ -14,11 +14,23 @@ Der Dev-Server leitet `/api/**` automatisch an `http://localhost:8080` weiter (P
 ## Tests
 
 ```bash
-npm test         # Vitest (einmalig)
-npm test -- --watch   # Watch-Modus
+npm test              # Vitest über den Angular-Builder
+npm run test:coverage # zusätzlich Coverage-Report (coverage/frontend/)
 ```
 
-Getestet: `AuthService`, `RecipeService`, `IngredientService`, `AuthGuard`, `AdminGuard`
+| Test | Abgedeckt |
+|------|-----------|
+| `api.service.spec.ts` | Alle 8 HTTP-Methoden, Query-Param-Aufbau, Fehlerweitergabe |
+| `auth.service.spec.ts` | Login, Registrierung, Logout, Token-Persistenz, `isAdmin` |
+| `recipe.service.spec.ts` | Laden, Generieren, Löschen, Fehler- und Loading-State |
+| `ingredient.service.spec.ts` | Laden, Anlegen inkl. Sortierung, Löschen, `catalogChanged$` |
+| `auth.guard.spec.ts` | Zugriff mit Token, Redirect ohne Token |
+| `admin.guard.spec.ts` | Zugriff als ADMIN, Redirect als USER |
+| `auth.interceptor.spec.ts` | Bearer-Header, 401-Logout, Ausnahme für Auth-Endpunkte |
+| `recipe-form.util.spec.ts` | Draft-Konvertierung, Payload-Bau, Neunummerierung, Leerzeilen-Filter |
+
+Der Coverage-Scope ist bewusst auf `src/app/core/**` begrenzt — Komponenten sind
+template-lastig und wären mit E2E-Tests sinnvoller abgedeckt als mit Unit-Tests.
 
 ## Build
 

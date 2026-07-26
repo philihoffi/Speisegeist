@@ -65,32 +65,31 @@ docker compose up -d --build
 
 ## Tests
 
-### Backend — Unit-Tests
+| Suite | Umfang | Befehl |
+|-------|--------|--------|
+| Backend Unit + Controller | 128 Tests | `cd backend && ./mvnw test` |
+| Backend Integration (Docker) | 5 Tests | `cd backend && ./mvnw test -Pintegration` |
+| Frontend | 62 Tests | `cd frontend && npm test` |
 
-```bash
-cd backend
-./mvnw test
-```
+### Backend
 
-Testet: `AuthService`, `RecipeService`, `IngredientService`, `AdminService`, `JwtTokenProvider`, `AuthController`, `RecipeController`, `AdminController`, `IngredientController`
+Services, Controller, Security-Filter, Exception-Handling und die OpenRouter-Anbindung
+laufen als reine Mockito-/MockMvc-Tests ohne Spring-Kontext — dadurch braucht die
+Standard-Suite weder Docker noch Datenbank. Die HTTP-Schicht von `OpenRouterServiceImpl`
+wird über `MockRestServiceServer` gestubbt.
 
-### Backend — Integrationstests (braucht Docker)
+Integrationstests sind mit `@Tag("integration")` markiert und aus dem Standardlauf
+ausgeschlossen; das Maven-Profil `-Pintegration` schaltet sie ein und startet
+PostgreSQL 17 via Testcontainers.
 
-```bash
-cd backend
-./mvnw test -Pintegration
-```
-
-Startet PostgreSQL via Testcontainers und testet `RecipeRepository`-Queries gegen eine echte Datenbank.
+Details: [backend/README.md](backend/README.md#tests)
 
 ### Frontend
 
-```bash
-cd frontend
-npm test
-```
+Services, Guards, Interceptor und Form-Utilities sind per Vitest + `TestBed` abgedeckt.
+Der Coverage-Scope ist bewusst auf `src/app/core/**` begrenzt.
 
-Testet: `AuthService`, `RecipeService`, `IngredientService`, `AuthGuard`, `AdminGuard`
+Details: [frontend/README.md](frontend/README.md#tests)
 
 ### Coverage-Übersicht
 

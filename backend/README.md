@@ -16,28 +16,49 @@ API läuft auf http://localhost:8080/api
 ## Tests
 
 ```bash
-# Unit-Tests (kein Docker nötig)
+# Unit- und Controller-Tests (kein Docker nötig) — 128 Tests
 ./mvnw test
 
-# Integrationstests (braucht Docker für Testcontainers)
+# Zusätzlich Integrationstests (braucht Docker für Testcontainers)
 ./mvnw test -Pintegration
 ```
 
-**Unit-Tests** laufen mit Mockito ohne Spring-Kontext:
-- `JwtTokenProviderTest` — Token-Generierung, Validierung, Extraktion, Ablauf
-- `AuthServiceTest` — Registrierung, Login, E-Mail-Normalisierung
-- `RecipeServiceTest` — Erstellen, Suchen, Generieren, Aktualisieren
-- `IngredientServiceTest` — Normalisierung, Deduplizierung, CRUD
-- `AdminServiceTest` — Statistiken, Benutzerliste, Rollen, Löschen
+Der JaCoCo-Report liegt danach unter `target/site/jacoco/index.html`.
 
-**Controller-Tests** mit MockMvc (kein Spring-Kontext):
-- `AuthControllerTest` — Register 201, Login 200
-- `RecipeControllerTest` — Search, Get, Create, Delete, Generate, Rate
-- `IngredientControllerTest` — List, Get, Create (Validation), Update, Delete
-- `AdminControllerTest` — Stats, Users, DeleteUser, UpdateRole
+**Service-Tests** (Mockito, kein Spring-Kontext):
 
-**Integrationstests** (`@Tag("integration")`) mit Testcontainers:
-- `RecipeRepositoryTest` — findBySearch, findByTag gegen echtes PostgreSQL 17
+| Test | Abgedeckt |
+|------|-----------|
+| `AuthServiceTest` | Registrierung, Login, E-Mail-Normalisierung |
+| `RecipeServiceTest` | Erstellen, Suchen, Generieren, partielles Update |
+| `IngredientServiceTest` | Normalisierung, Deduplizierung, CRUD |
+| `AdminServiceTest` | Statistiken, Benutzerliste, Rollenwechsel, Löschen |
+| `RecipeGeneratorServiceTest` | JSON-Parsing, Markdown-Fences, Retry bei 429, Prompt-Aufbau |
+| `OpenRouterServiceImplTest` | Response-Parsing gegen `MockRestServiceServer`: Provider-Fehler (top-level, per-choice, `finish_reason=error`), Token-Limit, Key-Info, Bild-Dekodierung (b64) |
+| `IngredientImageServiceTest` | Cache-Treffer ohne Provider-Aufruf, Generierung, Prompt-Inhalt |
+| `RecipeImageServiceTest` | Cache-Treffer, Prompt aus Name/Beschreibung, max. 4 Zutaten |
+
+**Controller-Tests** (MockMvc, standalone):
+
+| Test | Abgedeckt |
+|------|-----------|
+| `AuthControllerTest` | Register 201, Login 200 |
+| `RecipeControllerTest` | Search, Get, Create, Delete, Generate, Rate |
+| `IngredientControllerTest` | List, Get, Create inkl. Validierung 400, Update, Delete |
+| `AdminControllerTest` | Stats, Users, DeleteUser 404, UpdateRole |
+
+**Config & Infrastruktur:**
+
+| Test | Abgedeckt |
+|------|-----------|
+| `JwtTokenProviderTest` | Generierung, Validierung, Extraktion, Ablauf, manipuliertes Token |
+| `JwtAuthenticationFilterTest` | SecurityContext-Befüllung, Admin-Authorities, ungültiges/fehlendes Token |
+| `DataInitializerTest` | Admin-Anlage, E-Mail-Normalisierung, Passwort-Hashing, alle Skip-Bedingungen |
+| `GlobalExceptionHandlerTest` | Status-Mapping aller 9 Handler + keine internen Details im Response |
+| `StreamingJsonWriterTest` | NDJSON-Format, ein JSON-Objekt pro Zeile, Fehler-Records |
+
+**Integrationstests** (`@Tag("integration")`, Testcontainers + echtes PostgreSQL 17):
+- `RecipeRepositoryTest` — `findBySearch` (Zutat, Name, case-insensitive), `findByTag`
 
 ## Projektstruktur
 

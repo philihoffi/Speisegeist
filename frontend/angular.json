@@ -75,7 +75,9 @@
             "coverage": {
               "coverage": true,
               "coverageReporters": ["lcov", "text"],
-              "watch": false
+              "watch": false,
+              "coverageInclude": ["src/app/core/**/*.ts"],
+              "coverageExclude": ["src/app/core/models/**"]
             }
           }
         }
