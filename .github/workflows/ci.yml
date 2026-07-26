@@ -33,6 +33,15 @@ jobs:
           flags: backend
           fail_ci_if_error: false
 
+      # Muss auch bei fehlgeschlagenen Tests laufen — genau die sollen gemeldet werden
+      - name: Upload backend test results
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: backend/target/surefire-reports/*.xml
+          flags: backend
+
   frontend:
     name: Frontend Tests
     runs-on: ubuntu-latest
@@ -60,3 +69,11 @@ jobs:
           files: frontend/coverage/frontend/lcov.info
           flags: frontend
           fail_ci_if_error: false
+
+      - name: Upload frontend test results
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: frontend/junit.xml
+          flags: frontend

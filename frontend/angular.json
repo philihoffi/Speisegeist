@@ -77,7 +77,8 @@
               "coverageReporters": ["lcov", "text"],
               "watch": false,
               "coverageInclude": ["src/app/core/**/*.ts"],
-              "coverageExclude": ["src/app/core/models/**"]
+              "coverageExclude": ["src/app/core/models/**"],
+              "reporters": ["default", ["junit", { "outputFile": "junit.xml" }]]
             }
           }
         }
