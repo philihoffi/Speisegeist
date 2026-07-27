@@ -42,10 +42,13 @@ public interface OpenRouterService {
      * @param prompt    Beschreibung des gewünschten Bildes
      * @param size      Zielgröße im Format "WIDTHxHEIGHT" (z. B. "1024x1024"),
      *                  oder {@code null} für die Modell-Standardgröße
+     * @param quality   Renderqualität (z. B. "low"/"medium"/"high"), oder {@code null}
+     *                  für die Modell-Standardqualität; ignoriert von Modellen ohne
+     *                  Qualitätsstufe
      * @param n         Anzahl der zu erzeugenden Bilder (typischerweise 1)
      * @return die Roh-Bytes und der Content-Type des ersten Bildes
      */
-    GeneratedImage generateImage(String prompt, String size, Integer n);
+    GeneratedImage generateImage(String prompt, String size, String quality, Integer n);
 
     /** The configured model (e.g. for provenance metadata). */
     String getModel();

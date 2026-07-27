@@ -2,11 +2,7 @@ package com.philipphofmann.backend.service;
 
 import com.philipphofmann.backend.entity.Recipe;
 import com.philipphofmann.backend.entity.RecipeImage;
-import com.philipphofmann.backend.entity.RecipeIngredient;
 import com.philipphofmann.backend.repository.RecipeImageRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -17,50 +13,39 @@ import java.util.UUID;
  * kommt es ohne weiteren Provider-Aufruf direkt aus der DB.
  */
 @Service
-@RequiredArgsConstructor
-@Slf4j
-public class RecipeImageService {
+public class RecipeImageService extends AbstractImageGenerationService<Recipe, RecipeImage> {
 
     private final RecipeService recipeService;
-    private final RecipeImageRepository recipeImageRepository;
-    private final OpenRouterService openRouterService;
 
-    @Value("${openrouter.image-size:1024x1024}")
-    private String imageSize;
-
-    /**
-     * Liefert das (ggf. neu generierte) Bild eines Rezepts. Prüft implizit über
-     * {@link RecipeService#getRecipe}, dass das Rezept existiert.
-     *
-     * <p>Bewusst nicht {@code @Transactional}: der (langsame) OpenRouter-Aufruf soll keine
-     * DB-Verbindung offen halten. DB-Zugriffe (findById/save) laufen jeweils in ihrer eigenen
-     * Repository-Transaktion.
-     */
-    public RecipeImage getOrCreateImage(UUID recipeId) {
-        Recipe recipe = recipeService.getRecipe(recipeId);
-
-        return recipeImageRepository.findById(recipeId)
-                .orElseGet(() -> generateAndStore(recipe));
+    public RecipeImageService(RecipeService recipeService, RecipeImageRepository recipeImageRepository,
+                               OpenRouterService openRouterService) {
+        super(recipeImageRepository, openRouterService);
+        this.recipeService = recipeService;
     }
 
-    private RecipeImage generateAndStore(Recipe recipe) {
-        String prompt = buildPrompt(recipe);
-        log.debug("Generiere Bild für Rezept {} ({})", recipe.getId(), recipe.getName());
+    @Override
+    protected Recipe fetchEntity(UUID id) {
+        return recipeService.getRecipe(id);
+    }
 
-        OpenRouterService.GeneratedImage generated = openRouterService.generateImage(prompt, imageSize, 1);
+    @Override
+    protected String describeEntity(Recipe recipe) {
+        return "Rezept " + recipe.getId() + " (" + recipe.getName() + ")";
+    }
 
-        RecipeImage image = RecipeImage.builder()
+    @Override
+    protected RecipeImage newImage(Recipe recipe, OpenRouterService.GeneratedImage generated, String prompt, String sourceModel) {
+        return RecipeImage.builder()
                 .recipeId(recipe.getId())
                 .data(generated.data())
                 .contentType(generated.mediaType())
                 .prompt(prompt)
-                .sourceModel(openRouterService.getImageModel())
+                .sourceModel(sourceModel)
                 .build();
-
-        return recipeImageRepository.save(image);
     }
 
-    private String buildPrompt(Recipe recipe) {
+    @Override
+    protected String buildPrompt(Recipe recipe) {
         StringBuilder sb = new StringBuilder(
                 "Professional food photography of \"")
                 .append(recipe.getName()).append("\"");
