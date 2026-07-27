@@ -3,9 +3,6 @@ package com.philipphofmann.backend.service;
 import com.philipphofmann.backend.entity.Ingredient;
 import com.philipphofmann.backend.entity.IngredientImage;
 import com.philipphofmann.backend.repository.IngredientImageRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -17,45 +14,35 @@ import java.util.UUID;
  * requests serve the persisted image directly.
  */
 @Service
-@RequiredArgsConstructor
-@Slf4j
-public class IngredientImageService {
+public class IngredientImageService extends AbstractImageGenerationService<Ingredient, IngredientImage> {
 
     private final IngredientService ingredientService;
-    private final IngredientImageRepository ingredientImageRepository;
-    private final OpenRouterService openRouterService;
 
-    @Value("${openrouter.image-size:1024x1024}")
-    private String imageSize;
-
-    /**
-     * Returns the (possibly newly generated) image for the given ingredient.
-     * Not transactional: the OpenRouter call may be slow and should not hold
-     * a DB connection.
-     */
-    public IngredientImage getOrCreateImage(UUID ingredientId) {
-        return ingredientImageRepository.findById(ingredientId)
-                .orElseGet(() -> {
-                    Ingredient ingredient = ingredientService.getIngredient(ingredientId);
-                    return generateAndStore(ingredient);
-                });
+    public IngredientImageService(IngredientService ingredientService, IngredientImageRepository ingredientImageRepository,
+                                   OpenRouterService openRouterService) {
+        super(ingredientImageRepository, openRouterService);
+        this.ingredientService = ingredientService;
     }
 
-    private IngredientImage generateAndStore(Ingredient ingredient) {
-        String prompt = buildPrompt(ingredient);
-        log.debug("Generiere Bild für Zutat {} ({})", ingredient.getId(), ingredient.getName());
+    @Override
+    protected Ingredient fetchEntity(UUID id) {
+        return ingredientService.getIngredient(id);
+    }
 
-        OpenRouterService.GeneratedImage generated = openRouterService.generateImage(prompt, imageSize, 1);
+    @Override
+    protected String describeEntity(Ingredient ingredient) {
+        return "Zutat " + ingredient.getId() + " (" + ingredient.getName() + ")";
+    }
 
-        IngredientImage image = IngredientImage.builder()
+    @Override
+    protected IngredientImage newImage(Ingredient ingredient, OpenRouterService.GeneratedImage generated, String prompt, String sourceModel) {
+        return IngredientImage.builder()
                 .ingredientId(ingredient.getId())
                 .data(generated.data())
                 .contentType(generated.mediaType())
                 .prompt(prompt)
-                .sourceModel(openRouterService.getImageModel())
+                .sourceModel(sourceModel)
                 .build();
-
-        return ingredientImageRepository.save(image);
     }
 
     private static final String SCENE_GUIDE =
@@ -77,7 +64,8 @@ public class IngredientImageService {
             + " locker verstreut, ein Teil in einer kleinen Schale daneben.\n"
             + "- Gemüse, Obst, Tofu und alle anderen Zutaten: frisch und einzeln auf dem Holzbrett.";
 
-    private String buildPrompt(Ingredient ingredient) {
+    @Override
+    protected String buildPrompt(Ingredient ingredient) {
         return new StringBuilder("Fotorealistisches, appetitliches Food-Foto der einzelnen Zutat \"")
                 .append(ingredient.getName()).append("\".")
                 .append("\n\nDie Zutat soll pur, unverarbeitet und einzeln auf einem hellen Holzbrett")

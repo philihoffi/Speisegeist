@@ -37,6 +37,7 @@ class IngredientImageServiceTest {
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(service, "imageSize", "1024x1024");
+        ReflectionTestUtils.setField(service, "imageQuality", "medium");
         ingredientId = UUID.randomUUID();
     }
 
@@ -60,7 +61,7 @@ class IngredientImageServiceTest {
     void generatesAndPersistsImageOnFirstAccess() {
         when(ingredientImageRepository.findById(ingredientId)).thenReturn(Optional.empty());
         when(ingredientService.getIngredient(ingredientId)).thenReturn(ingredient("Tofu"));
-        when(openRouterService.generateImage(any(), eq("1024x1024"), eq(1)))
+        when(openRouterService.generateImage(any(), eq("1024x1024"), eq("medium"), eq(1)))
                 .thenReturn(new OpenRouterService.GeneratedImage(new byte[]{1, 2}, MediaType.IMAGE_PNG_VALUE));
         when(openRouterService.getImageModel()).thenReturn("openai/dall-e-3");
         when(ingredientImageRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
@@ -78,14 +79,14 @@ class IngredientImageServiceTest {
     void promptContainsIngredientNameAndForbidsExtras() {
         when(ingredientImageRepository.findById(ingredientId)).thenReturn(Optional.empty());
         when(ingredientService.getIngredient(ingredientId)).thenReturn(ingredient("Kurkuma"));
-        when(openRouterService.generateImage(any(), any(), any()))
+        when(openRouterService.generateImage(any(), any(), any(), any()))
                 .thenReturn(new OpenRouterService.GeneratedImage(new byte[]{1}, MediaType.IMAGE_PNG_VALUE));
         when(ingredientImageRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         service.getOrCreateImage(ingredientId);
 
         ArgumentCaptor<String> prompt = ArgumentCaptor.forClass(String.class);
-        verify(openRouterService).generateImage(prompt.capture(), any(), any());
+        verify(openRouterService).generateImage(prompt.capture(), any(), any(), any());
         assertThat(prompt.getValue()).contains("Kurkuma");
         assertThat(prompt.getValue()).contains("KEINE weiteren Zutaten");
     }
@@ -94,7 +95,7 @@ class IngredientImageServiceTest {
     void promptIsPersistedAlongsideTheImage() {
         when(ingredientImageRepository.findById(ingredientId)).thenReturn(Optional.empty());
         when(ingredientService.getIngredient(ingredientId)).thenReturn(ingredient("Basilikum"));
-        when(openRouterService.generateImage(any(), any(), any()))
+        when(openRouterService.generateImage(any(), any(), any(), any()))
                 .thenReturn(new OpenRouterService.GeneratedImage(new byte[]{9}, MediaType.IMAGE_PNG_VALUE));
         when(ingredientImageRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 

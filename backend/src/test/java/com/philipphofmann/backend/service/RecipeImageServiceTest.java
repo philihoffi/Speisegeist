@@ -39,6 +39,7 @@ class RecipeImageServiceTest {
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(service, "imageSize", "1024x1024");
+        ReflectionTestUtils.setField(service, "imageQuality", "medium");
         recipeId = UUID.randomUUID();
     }
 
@@ -58,27 +59,26 @@ class RecipeImageServiceTest {
     }
 
     private void stubGeneration() {
-        when(openRouterService.generateImage(any(), any(), any()))
+        when(openRouterService.generateImage(any(), any(), any(), any()))
                 .thenReturn(new OpenRouterService.GeneratedImage(new byte[]{7}, MediaType.IMAGE_PNG_VALUE));
         when(recipeImageRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
     }
 
     private String capturePrompt() {
         ArgumentCaptor<String> prompt = ArgumentCaptor.forClass(String.class);
-        verify(openRouterService).generateImage(prompt.capture(), any(), any());
+        verify(openRouterService).generateImage(prompt.capture(), any(), any(), any());
         return prompt.getValue();
     }
 
     @Test
     void returnsCachedImageWithoutCallingOpenRouter() {
         RecipeImage cached = RecipeImage.builder().recipeId(recipeId).build();
-        when(recipeService.getRecipe(recipeId)).thenReturn(recipe("Pasta", null));
         when(recipeImageRepository.findById(recipeId)).thenReturn(Optional.of(cached));
 
         RecipeImage result = service.getOrCreateImage(recipeId);
 
         assertThat(result).isSameAs(cached);
-        verifyNoInteractions(openRouterService);
+        verifyNoInteractions(recipeService, openRouterService);
         verify(recipeImageRepository, never()).save(any());
     }
 

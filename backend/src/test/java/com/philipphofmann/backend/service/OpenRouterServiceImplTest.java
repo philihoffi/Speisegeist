@@ -193,56 +193,82 @@ class OpenRouterServiceImplTest {
     @Test
     void generateImage_decodesBase64Payload() {
         String b64 = java.util.Base64.getEncoder().encodeToString(new byte[]{1, 2, 3, 4});
-        server.expect(requestTo("https://openrouter.test/api/v1/images/generations"))
+        server.expect(requestTo("https://openrouter.test/api/v1/images"))
                 .andRespond(withSuccess(
                         "{\"data\":[{\"b64_json\":\"" + b64 + "\"}]}", MediaType.APPLICATION_JSON));
 
-        var image = service.generateImage("ein Apfel", "1024x1024", 1);
+        var image = service.generateImage("ein Apfel", "1024x1024", "medium", 1);
 
         assertThat(image.data()).containsExactly(1, 2, 3, 4);
         assertThat(image.mediaType()).isEqualTo(MediaType.IMAGE_PNG_VALUE);
+        server.verify();
     }
 
     @Test
     void generateImage_throwsOnEmptyDataArray() {
-        server.expect(requestTo("https://openrouter.test/api/v1/images/generations"))
+        server.expect(requestTo("https://openrouter.test/api/v1/images"))
                 .andRespond(withSuccess("{\"data\":[]}", MediaType.APPLICATION_JSON));
 
-        assertThatThrownBy(() -> service.generateImage("x", "1024x1024", 1))
+        assertThatThrownBy(() -> service.generateImage("x", "1024x1024", "medium", 1))
                 .isInstanceOf(RecipeGenerationException.class)
                 .hasMessageContaining("Keine Bilddaten");
+        server.verify();
     }
 
     @Test
     void generateImage_throwsOnProviderError() {
-        server.expect(requestTo("https://openrouter.test/api/v1/images/generations"))
+        server.expect(requestTo("https://openrouter.test/api/v1/images"))
                 .andRespond(withSuccess(
                         "{\"error\":{\"message\":\"content policy\"}}", MediaType.APPLICATION_JSON));
 
-        assertThatThrownBy(() -> service.generateImage("x", "1024x1024", 1))
+        assertThatThrownBy(() -> service.generateImage("x", "1024x1024", "medium", 1))
                 .isInstanceOf(RecipeGenerationException.class)
                 .hasMessageContaining("content policy");
+        server.verify();
     }
 
     @Test
     void generateImage_throwsWhenNeitherUrlNorBase64Present() {
-        server.expect(requestTo("https://openrouter.test/api/v1/images/generations"))
+        server.expect(requestTo("https://openrouter.test/api/v1/images"))
                 .andRespond(withSuccess(
                         "{\"data\":[{\"revised_prompt\":\"nur Text\"}]}", MediaType.APPLICATION_JSON));
 
-        assertThatThrownBy(() -> service.generateImage("x", "1024x1024", 1))
+        assertThatThrownBy(() -> service.generateImage("x", "1024x1024", "medium", 1))
                 .isInstanceOf(RecipeGenerationException.class)
                 .hasMessageContaining("weder eine Bild-URL noch b64_json");
+        server.verify();
     }
 
     @Test
     void generateImage_omitsSizeWhenBlank() {
-        server.expect(requestTo("https://openrouter.test/api/v1/images/generations"))
+        server.expect(requestTo("https://openrouter.test/api/v1/images"))
                 .andExpect(jsonPath("$.size").doesNotExist())
                 .andRespond(withSuccess(
                         "{\"data\":[{\"b64_json\":\"AQID\"}]}", MediaType.APPLICATION_JSON));
 
-        service.generateImage("x", "  ", 1);
+        service.generateImage("x", "  ", "medium", 1);
+        server.verify();
+    }
+
+    @Test
+    void generateImage_omitsQualityWhenBlank() {
+        server.expect(requestTo("https://openrouter.test/api/v1/images"))
+                .andExpect(jsonPath("$.quality").doesNotExist())
+                .andRespond(withSuccess(
+                        "{\"data\":[{\"b64_json\":\"AQID\"}]}", MediaType.APPLICATION_JSON));
+
+        service.generateImage("x", "1024x1024", "  ", 1);
+        server.verify();
+    }
+
+    @Test
+    void generateImage_includesQualityWhenSet() {
+        server.expect(requestTo("https://openrouter.test/api/v1/images"))
+                .andExpect(jsonPath("$.quality").value("medium"))
+                .andRespond(withSuccess(
+                        "{\"data\":[{\"b64_json\":\"AQID\"}]}", MediaType.APPLICATION_JSON));
+
+        service.generateImage("x", "1024x1024", "medium", 1);
         server.verify();
     }
 

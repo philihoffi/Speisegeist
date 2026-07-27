@@ -41,7 +41,7 @@ public class OpenRouterServiceImpl implements OpenRouterService {
     @Value("${openrouter.max-tokens:2000}")
     private int maxTokens;
 
-    @Value("${openrouter.image-model:openai/dall-e-3}")
+    @Value("${openrouter.image-model:openai/gpt-image-1-mini}")
     private String imageModel;
 
     @Override
@@ -55,19 +55,22 @@ public class OpenRouterServiceImpl implements OpenRouterService {
     }
 
     @Override
-    public GeneratedImage generateImage(String prompt, String size, Integer n) {
+    public GeneratedImage generateImage(String prompt, String size, String quality, Integer n) {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("model", imageModel);
         body.put("prompt", prompt);
         if (size != null && !size.isBlank()) {
             body.put("size", size);
         }
+        if (quality != null && !quality.isBlank()) {
+            body.put("quality", quality);
+        }
         if (n != null && n > 0) {
             body.put("n", n);
         }
 
         JsonNode response = openRouterRestClient.post()
-                .uri("/images/generations")
+                .uri("/images")
                 .body(body)
                 .retrieve()
                 .body(JsonNode.class);
