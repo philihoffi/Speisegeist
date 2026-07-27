@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit, ViewChild, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -29,7 +29,7 @@ import { StreamingRecipeComponent } from '../../components/streaming-recipe/stre
   selector: 'app-generator',
   standalone: true,
   imports: [
-    CommonModule, FormsModule, HeaderComponent, ErrorBannerComponent,
+    CommonModule, FormsModule, RouterLink, HeaderComponent, ErrorBannerComponent,
     MatCardModule, MatFormFieldModule, MatInputModule, MatButtonModule,
     MatIconModule, MatChipsModule, MatSelectModule, MatAutocompleteModule,
     MatProgressSpinnerModule, MatDialogModule

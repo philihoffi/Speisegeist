@@ -97,6 +97,36 @@ class RecipeControllerTest {
     }
 
     @Test
+    void generateBatchStream_returns201WithNdjsonContentType() throws Exception {
+        var result = mockMvc.perform(MockMvcRequestBuilders.post("/recipes/generate-batch-stream")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"theme\":\"Herbstgerichte\",\"count\":3}"))
+                .andExpect(MockMvcResultMatchers.request().asyncStarted())
+                .andReturn();
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch(result))
+                .andExpect(MockMvcResultMatchers.status().isCreated())
+                .andExpect(MockMvcResultMatchers.content()
+                        .contentTypeCompatibleWith(MediaType.valueOf("application/x-ndjson")));
+    }
+
+    @Test
+    void generateBatchStream_blankTheme_returns400() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.post("/recipes/generate-batch-stream")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"theme\":\"\",\"count\":3}"))
+                .andExpect(MockMvcResultMatchers.status().isBadRequest());
+    }
+
+    @Test
+    void generateBatchStream_countLessThanOne_returns400() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.post("/recipes/generate-batch-stream")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"theme\":\"Herbstgerichte\",\"count\":0}"))
+                .andExpect(MockMvcResultMatchers.status().isBadRequest());
+    }
+
+    @Test
     void rate_returns200() throws Exception {
         Recipe recipe = Recipe.builder().name("Gen").build();
         when(recipeService.rateRecipe(any(), anyDouble())).thenReturn(recipe);

@@ -37,6 +37,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/recipe-manual/pages/manual/manual.component').then(m => m.ManualRecipeComponent)
       },
       {
+        path: 'batch-generate',
+        loadComponent: () => import('./features/recipe-generator/pages/batch-generate/batch-generate.component').then(m => m.BatchGenerateComponent)
+      },
+      {
         path: ':id',
         loadComponent: () => import('./features/recipe-detail/pages/detail/detail.component').then(m => m.DetailComponent)
       }

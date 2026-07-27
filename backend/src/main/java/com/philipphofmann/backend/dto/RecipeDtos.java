@@ -25,6 +25,17 @@ public final class RecipeDtos {
             GenerationPreferences preferences) {
     }
 
+    /**
+     * Request to generate a batch of recipes from a free-text theme instead of an explicit
+     * ingredient list. {@code count} is deliberately unbounded (no {@code @Max}) — the batch
+     * loop protects itself with a consecutive-failure circuit breaker instead of a hard cap.
+     */
+    public record BatchRecipeGenerationRequest(
+            @NotBlank String theme,
+            @NotNull @Min(1) Integer count,
+            GenerationPreferences preferences) {
+    }
+
     /** Optional constraints applied to a generated recipe. */
     public record GenerationPreferences(
             String cuisine,

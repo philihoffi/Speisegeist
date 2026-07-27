@@ -17,10 +17,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
+import java.io.ByteArrayOutputStream;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.UnaryOperator;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -57,6 +59,23 @@ class RecipeServiceTest {
         Recipe saved = recipeService.generateRecipe(new RecipeGenerationRequest(List.of("Tofu"), null));
 
         assertNotNull(saved.getSourceVersion());
+        verify(recipeRepository).save(generated);
+    }
+
+    @Test
+    void generateRecipeBatch_setsSourceVersionAndPersistsViaGeneratorPersister() throws Exception {
+        Recipe generated = Recipe.builder().name("Kürbis-Curry").build();
+        when(recipeRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        doAnswer(invocation -> {
+            UnaryOperator<Recipe> persister = invocation.getArgument(4);
+            persister.apply(generated);
+            return null;
+        }).when(recipeGeneratorService).generateThemeBatchStreaming(any(), anyInt(), any(), any(), any());
+
+        recipeService.generateRecipeBatch(
+                new BatchRecipeGenerationRequest("Herbstgerichte", 3, null), new ByteArrayOutputStream());
+
+        assertNotNull(generated.getSourceVersion());
         verify(recipeRepository).save(generated);
     }
 
