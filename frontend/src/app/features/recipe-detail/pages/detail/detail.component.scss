@@ -18,14 +18,9 @@
   align-items: center;
 
   .actions {
-    opacity: 0;
-    transition: opacity 0.15s ease;
+    display: inline-flex;
+    gap: 4px;
     flex-shrink: 0;
-  }
-
-  &:hover .actions,
-  &:focus-within .actions {
-    opacity: 1;
   }
 }
 

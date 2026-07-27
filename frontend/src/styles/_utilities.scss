@@ -19,3 +19,18 @@
   .geist-mark { animation: none; }
   * { transition: none !important; }
 }
+
+// Destructive icon-button action (recipe detail, ingredient card, …)
+.delete-btn {
+  color: var(--sg-danger-text) !important;
+}
+
+// Search field sitting below a full-width header row — left-aligned, capped
+// width so it doesn't stretch across very wide page shells.
+.search-field {
+  display: block !important;
+  width: 100%;
+  max-width: 400px;
+  margin: 0 0 24px;
+  text-align: left;
+}

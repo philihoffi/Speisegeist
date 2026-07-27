@@ -50,15 +50,6 @@
   }
 }
 
-.search-field {
-  display: block;
-  width: 100%;
-  max-width: 400px;
-  margin: 0 auto 24px;
-  text-align: left;
-}
-
-
 .ingredient-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
