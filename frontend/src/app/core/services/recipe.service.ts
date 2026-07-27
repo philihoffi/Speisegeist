@@ -143,6 +143,73 @@ export class RecipeService {
     return subject.asObservable();
   }
 
+  /**
+   * Generates a batch of recipes from a free-text theme (NDJSON format). Deliberately
+   * doesn't touch the shared loading$/error$ state — a long-running batch shouldn't make
+   * the rest of the app think a single recipe is loading; the batch page tracks its own
+   * progress/error state locally instead.
+   */
+  generateRecipeBatchStream(theme: string, count: number, preferences?: any): Observable<any> {
+    const subject = new Subject<any>();
+
+    const request = { theme, count, preferences };
+    const token = this.authService.getToken();
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    fetch('/api/recipes/generate-batch-stream', {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(request)
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.body?.getReader();
+      })
+      .then(reader => {
+        if (!reader) throw new Error('No reader available');
+
+        const decoder = new TextDecoder();
+        const readChunk = () => {
+          reader.read().then(({ done, value }) => {
+            if (done) {
+              subject.complete();
+              return;
+            }
+
+            const chunk = decoder.decode(value, { stream: true });
+            chunk.split('\n').forEach(line => {
+              if (line.trim()) {
+                try {
+                  const event = JSON.parse(line);
+                  subject.next(event);
+                } catch (e) {
+                  console.error('Failed to parse NDJSON line', e);
+                }
+              }
+            });
+
+            readChunk();
+          });
+        };
+
+        readChunk();
+      })
+      .catch(err => {
+        subject.error(err);
+      });
+
+    return subject.asObservable();
+  }
+
   /** Deletes a recipe and removes it from the in-memory list. */
   deleteRecipe(id: string): Observable<void> {
     return this.api.deleteRecipe(id)

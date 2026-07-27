@@ -1,5 +1,6 @@
 package com.philipphofmann.backend.service;
 
+import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import com.philipphofmann.backend.dto.RecipeDtos.GenerationPreferences;
 import com.philipphofmann.backend.entity.DietaryRestriction;
@@ -15,6 +16,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestClientResponseException;
 
+import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -49,6 +52,7 @@ class RecipeGeneratorServiceTest {
     void setUp() {
         service = new RecipeGeneratorService(openRouterService, ingredientService, new ObjectMapper());
         ReflectionTestUtils.setField(service, "maxAttempts", 3);
+        ReflectionTestUtils.setField(service, "maxConsecutiveFailures", 5);
         // Only used by the tests that reach the JSON-parsing stage.
         lenient().when(openRouterService.getModel()).thenReturn("gpt-4o");
         Ingredient ingredient = Ingredient.builder().name("Tofu").normalizedName("tofu").build();
@@ -143,5 +147,99 @@ class RecipeGeneratorServiceTest {
         verify(openRouterService).complete(any(), argThat(messages ->
                 messages.stream().anyMatch(m -> m.content().contains("Vegan"))
         ), any());
+    }
+
+    // ---------- theme-based batch generation ----------
+
+    @Test
+    void generateRecipeFromTheme_includesThemeAndAvoidNamesInPrompt() {
+        when(openRouterService.complete(any(), any(), any())).thenReturn(VALID_RECIPE_JSON);
+
+        service.generateRecipeFromTheme("Schnelle vegane Feierabend-Gerichte", null,
+                List.of("Tofu-Curry", "Linsen-Dahl"));
+
+        verify(openRouterService).complete(any(), argThat(messages ->
+                messages.stream().anyMatch(m -> m.content().contains("Schnelle vegane Feierabend-Gerichte")
+                        && m.content().contains("Tofu-Curry")
+                        && m.content().contains("Linsen-Dahl"))
+        ), any());
+    }
+
+    @Test
+    void generateRecipeFromTheme_omitsAvoidHintWhenNoNamesYet() {
+        when(openRouterService.complete(any(), any(), any())).thenReturn(VALID_RECIPE_JSON);
+
+        service.generateRecipeFromTheme("Herbstgerichte", null, List.of());
+
+        verify(openRouterService).complete(any(), argThat(messages ->
+                messages.stream().noneMatch(m -> m.content().contains("Vermeide"))
+        ), any());
+    }
+
+    @Test
+    void generateThemeBatchStreaming_emitsOneRecipeEventPerSuccess() throws Exception {
+        when(openRouterService.complete(any(), any(), any())).thenReturn(VALID_RECIPE_JSON);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        service.generateThemeBatchStreaming("Herbstgerichte", 3, null, out, recipe -> recipe);
+
+        List<JsonNode> events = parseNdjson(out);
+        assertThat(eventsOfType(events, "recipe")).hasSize(3);
+        assertThat(eventsOfType(events, "recipe-error")).isEmpty();
+        JsonNode complete = eventsOfType(events, "batch-complete").get(0);
+        assertThat(complete.path("data").path("requested").asInt()).isEqualTo(3);
+        assertThat(complete.path("data").path("succeeded").asInt()).isEqualTo(3);
+        assertThat(complete.path("data").path("failed").asInt()).isEqualTo(0);
+    }
+
+    @Test
+    void generateThemeBatchStreaming_continuesAfterASingleFailure() throws Exception {
+        when(openRouterService.complete(any(), any(), any()))
+                .thenReturn(VALID_RECIPE_JSON)
+                .thenReturn("not-json")
+                .thenReturn(VALID_RECIPE_JSON);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        service.generateThemeBatchStreaming("Herbstgerichte", 3, null, out, recipe -> recipe);
+
+        List<JsonNode> events = parseNdjson(out);
+        assertThat(eventsOfType(events, "recipe")).hasSize(2);
+        assertThat(eventsOfType(events, "recipe-error")).hasSize(1);
+        JsonNode complete = eventsOfType(events, "batch-complete").get(0);
+        assertThat(complete.path("data").path("succeeded").asInt()).isEqualTo(2);
+        assertThat(complete.path("data").path("failed").asInt()).isEqualTo(1);
+    }
+
+    @Test
+    void generateThemeBatchStreaming_abortsAfterConsecutiveFailureThreshold() throws Exception {
+        ReflectionTestUtils.setField(service, "maxConsecutiveFailures", 2);
+        when(openRouterService.complete(any(), any(), any())).thenReturn("not-json");
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        service.generateThemeBatchStreaming("Herbstgerichte", 10, null, out, recipe -> recipe);
+
+        List<JsonNode> events = parseNdjson(out);
+        assertThat(eventsOfType(events, "recipe-error")).hasSize(2);
+        assertThat(eventsOfType(events, "recipe")).isEmpty();
+        verify(openRouterService, times(2)).complete(any(), any(), any());
+        JsonNode complete = eventsOfType(events, "batch-complete").get(0);
+        assertThat(complete.path("data").path("requested").asInt()).isEqualTo(10);
+        assertThat(complete.path("data").path("succeeded").asInt()).isEqualTo(0);
+        assertThat(complete.path("data").path("failed").asInt()).isEqualTo(2);
+    }
+
+    private List<JsonNode> parseNdjson(ByteArrayOutputStream out) throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        List<JsonNode> events = new ArrayList<>();
+        for (String line : out.toString().split("\n")) {
+            if (!line.isBlank()) {
+                events.add(mapper.readTree(line));
+            }
+        }
+        return events;
+    }
+
+    private List<JsonNode> eventsOfType(List<JsonNode> events, String type) {
+        return events.stream().filter(e -> type.equals(e.path("type").asText())).toList();
     }
 }

@@ -1,0 +1,105 @@
+<app-header></app-header>
+<div class="batch-generate-wrap">
+<div class="batch-generate">
+  <h1>Viele Rezepte zu einem Thema generieren</h1>
+  <p class="subtitle">
+    Gib eine Richtung vor – z.&nbsp;B. „schnelle vegane Feierabend-Gerichte" – und lass mehrere
+    passende Rezepte auf einmal generieren.
+  </p>
+
+  <mat-card>
+    <mat-card-content>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Thema / Richtung</mat-label>
+        <textarea matInput [(ngModel)]="theme" rows="2"
+                  placeholder="z.B. herzhafte Herbstsuppen mit Kürbis"
+                  [disabled]="isGenerating()"></textarea>
+      </mat-form-field>
+
+      <div class="preferences">
+        <mat-form-field appearance="outline">
+          <mat-label>Anzahl</mat-label>
+          <input matInput type="number" [(ngModel)]="count" min="1" [disabled]="isGenerating()">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Küche</mat-label>
+          <input matInput [(ngModel)]="cuisine" placeholder="z.B. Fränkisch, Italienisch"
+                 [disabled]="isGenerating()">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Max. Kochzeit (Min.)</mat-label>
+          <input matInput type="number" [(ngModel)]="cookTime" min="5" [disabled]="isGenerating()">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Portionen</mat-label>
+          <input matInput type="number" [(ngModel)]="servings" min="1" max="20" [disabled]="isGenerating()">
+        </mat-form-field>
+      </div>
+
+      <div class="dietary-restrictions">
+        <h3>Ernährungseinschränkungen (optional)</h3>
+        <div class="restrictions-grid">
+          @for (restriction of dietaryRestrictions | keyvalue; track restriction.key) {
+            <div class="restriction-checkbox">
+              <input
+                type="checkbox"
+                [id]="'diet_' + restriction.key"
+                [checked]="restriction.value"
+                [disabled]="isGenerating()"
+                (change)="toggleDietaryRestriction(restriction.key)">
+              <label [for]="'diet_' + restriction.key">{{ dietaryRestrictionLabels.get(restriction.key) ?? restriction.key }}</label>
+            </div>
+          }
+        </div>
+      </div>
+
+      <app-error-banner [message]="errorMessage()"></app-error-banner>
+
+      <button mat-raised-button color="primary" class="generate-btn"
+              (click)="startBatch()"
+              [disabled]="!theme.trim() || count < 1 || isGenerating()">
+        @if (isGenerating()) {
+          <mat-spinner diameter="20" class="inline-spinner"></mat-spinner>
+        } @else {
+          <mat-icon>auto_awesome</mat-icon>
+          Rezepte generieren
+        }
+      </button>
+    </mat-card-content>
+  </mat-card>
+
+  @if (isGenerating() || recipes().length > 0 || recipeErrors().length > 0) {
+    <div class="progress-header">
+      @if (isGenerating()) {
+        <span>Generiere Rezept {{ progressIndex() }} von {{ progressTotal() }} …</span>
+      } @else {
+        <span>
+          {{ recipes().length }} von {{ progressTotal() }} Rezepten erfolgreich generiert
+          @if (recipeErrors().length > 0) {
+            ({{ recipeErrors().length }} fehlgeschlagen)
+          }
+        </span>
+      }
+    </div>
+  }
+
+  @if (recipeErrors().length > 0) {
+    <div class="recipe-errors">
+      @for (err of recipeErrors(); track $index) {
+        <p class="recipe-error">Rezept {{ err.index }} fehlgeschlagen: {{ err.message }}</p>
+      }
+    </div>
+  }
+
+  @if (recipes().length > 0) {
+    <div class="recipe-grid">
+      @for (recipe of recipes(); track recipe.id) {
+        <app-recipe-card [recipe]="recipe"></app-recipe-card>
+      }
+    </div>
+  }
+</div>
+</div>

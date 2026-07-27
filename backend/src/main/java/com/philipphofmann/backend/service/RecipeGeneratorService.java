@@ -3,6 +3,7 @@ package com.philipphofmann.backend.service;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import com.philipphofmann.backend.dto.RecipeDtos.GenerationPreferences;
+import com.philipphofmann.backend.dto.RecipeDtos.RecipeSummaryResponse;
 import com.philipphofmann.backend.entity.CookingStep;
 import com.philipphofmann.backend.entity.DietaryRestriction;
 import com.philipphofmann.backend.entity.Recipe;
@@ -45,6 +46,12 @@ public class RecipeGeneratorService {
 
     @Value("${openrouter.api.retry-max-attempts:3}")
     private int maxAttempts;
+
+    @Value("${recipe.batch.max-consecutive-failures:5}")
+    private int maxConsecutiveFailures;
+
+    /** Caps how many previously-generated names are fed back into the prompt per batch item. */
+    private static final int MAX_AVOID_NAMES = 30;
 
     private static final String SYSTEM_PROMPT = """
             Du bist ein kreativer Koch-Assistent. Deine Aufgabe ist es, \
@@ -165,8 +172,19 @@ public class RecipeGeneratorService {
     }
 
     public Recipe generateRecipe(List<String> ingredients, GenerationPreferences preferences) {
-        String userPrompt = buildUserPrompt(ingredients, preferences);
+        return generateFromPrompt(buildUserPrompt(ingredients, preferences));
+    }
 
+    /**
+     * Generates a single recipe for the given free-text theme instead of an explicit
+     * ingredient list, used by the batch generation flow. {@code avoidNames} lists recipe
+     * names already generated in the same batch so the model avoids repeating itself.
+     */
+    public Recipe generateRecipeFromTheme(String theme, GenerationPreferences preferences, List<String> avoidNames) {
+        return generateFromPrompt(buildThemeUserPrompt(theme, preferences, avoidNames));
+    }
+
+    private Recipe generateFromPrompt(String userPrompt) {
         RestClientResponseException lastError = null;
         for (int attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
@@ -287,6 +305,41 @@ public class RecipeGeneratorService {
         return sb.toString();
     }
 
+    /**
+     * Builds the user prompt for the theme-based batch flow: a free-text direction instead
+     * of an explicit ingredient list, plus (if any) the names already generated in this
+     * batch so the model picks something different.
+     */
+    private String buildThemeUserPrompt(String theme, GenerationPreferences prefs, List<String> avoidNames) {
+        StringBuilder sb = new StringBuilder("Erfinde ein Rezept zum folgenden Thema: ").append(theme);
+        if (prefs != null) {
+            if (prefs.cuisine() != null) {
+                sb.append("\nKüche/Stil: ").append(prefs.cuisine());
+                sb.append("\n→ Tag \"").append(prefs.cuisine().toLowerCase()).append("\" muss in den tags enthalten sein.");
+            }
+            if (prefs.mealType() != null) sb.append("\nMahlzeit: ").append(prefs.mealType());
+            if (prefs.cookTime() != null) {
+                sb.append("\nMaximale Kochzeit: ").append(prefs.cookTime()).append(" Minuten (nicht überschreiten)");
+            }
+            if (prefs.servings() != null) {
+                sb.append("\nPortionen: ").append(prefs.servings()).append(" (Mengen entsprechend skalieren)");
+            }
+            if (prefs.dietaryRestrictions() != null && !prefs.dietaryRestrictions().isEmpty()) {
+                sb.append("\nErnährungseinschränkungen (PFLICHT, unbedingt einhalten):");
+                for (DietaryRestriction r : prefs.dietaryRestrictions()) {
+                    sb.append("\n- ").append(r.getDisplayName())
+                      .append(": ").append(r.getDescription());
+                }
+            }
+        }
+        if (avoidNames != null && !avoidNames.isEmpty()) {
+            sb.append("\nVermeide unbedingt eine Wiederholung dieser bereits in diesem Batch ")
+              .append("generierten Rezepte (anderes Gericht, andere Hauptzutat oder andere Zubereitungsart wählen): ")
+              .append(String.join("; ", avoidNames));
+        }
+        return sb.toString();
+    }
+
     public void generateRecipeStreaming(List<String> ingredients, GenerationPreferences preferences,
                                         OutputStream outputStream,
                                         java.util.function.UnaryOperator<Recipe> persister) throws IOException {
@@ -367,6 +420,53 @@ public class RecipeGeneratorService {
                     "OpenRouter-Anfrage fehlgeschlagen: " + lastError.getStatusCode(), lastError);
         }
         throw new OpenRouterUnavailableException("OpenRouter nicht erreichbar");
+    }
+
+    /**
+     * Generates {@code count} recipes for the given theme, streaming one NDJSON
+     * {@code "recipe"} event per successfully generated (and persisted) recipe. A single
+     * recipe's failure doesn't abort the whole batch — it's reported as a
+     * {@code "recipe-error"} event and generation continues — unless
+     * {@link #maxConsecutiveFailures} failures happen in a row, which aborts the batch early
+     * (protects against burning through paid API calls on a systematically broken
+     * theme/prompt or a provider outage). Always ends with a {@code "batch-complete"} summary
+     * event with the actually reached counts.
+     */
+    public void generateThemeBatchStreaming(String theme, int count, GenerationPreferences preferences,
+                                            OutputStream outputStream,
+                                            java.util.function.UnaryOperator<Recipe> persister) throws IOException {
+        StreamingJsonWriter writer = new StreamingJsonWriter(outputStream, objectMapper);
+        List<String> avoidNames = new ArrayList<>();
+        int succeeded = 0;
+        int failed = 0;
+        int consecutiveFailures = 0;
+
+        for (int index = 1; index <= count; index++) {
+            writer.writeRecord("batch-progress", Map.of("index", index, "total", count));
+            try {
+                Recipe recipe = generateRecipeFromTheme(theme, preferences, List.copyOf(avoidNames));
+                Recipe saved = persister.apply(recipe);
+                succeeded++;
+                consecutiveFailures = 0;
+                avoidNames.add(saved.getName());
+                if (avoidNames.size() > MAX_AVOID_NAMES) {
+                    avoidNames.remove(0);
+                }
+                writer.writeRecord("recipe", RecipeSummaryResponse.from(saved));
+            } catch (RecipeGenerationException | OpenRouterUnavailableException e) {
+                failed++;
+                consecutiveFailures++;
+                writer.writeRecord("recipe-error", Map.of("index", index, "message",
+                        e.getMessage() != null ? e.getMessage() : "Unbekannter Fehler"));
+                if (consecutiveFailures >= maxConsecutiveFailures) {
+                    log.warn("Batch-Generierung für Thema \"{}\" nach {} aufeinanderfolgenden Fehlschlägen abgebrochen",
+                            theme, consecutiveFailures);
+                    break;
+                }
+            }
+        }
+
+        writer.writeRecord("batch-complete", Map.of("requested", count, "succeeded", succeeded, "failed", failed));
     }
 
     private void emitRecipeStreaming(Recipe recipe, StreamingJsonWriter writer) throws IOException {

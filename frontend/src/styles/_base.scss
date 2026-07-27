@@ -36,7 +36,8 @@ h2 { font-size: 1.35rem; }
 .generator,
 .manual,
 .detail,
-.ingredients-page {
+.ingredients-page,
+.batch-generate {
   position: relative;
   background: var(--sg-surface);
   border: 1px solid var(--sg-border);
@@ -50,7 +51,8 @@ h2 { font-size: 1.35rem; }
 // Generator & manual wrap their form in a card inside the shell — flatten it
 // so we don't get a card-in-a-card.
 .generator > .mat-mdc-card,
-.manual > .mat-mdc-card {
+.manual > .mat-mdc-card,
+.batch-generate > .mat-mdc-card {
   box-shadow: none;
   border: none;
   background: transparent;

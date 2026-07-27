@@ -65,6 +65,23 @@ public class RecipeService {
     }
 
     /**
+     * Generates a batch of recipes from a free-text theme, streaming one NDJSON event per
+     * generated (and persisted) recipe plus a final summary event.
+     *
+     * @param request the batch generation request (theme, count, optional preferences)
+     * @param outputStream the output stream for NDJSON events
+     * @throws IOException if streaming fails
+     */
+    public void generateRecipeBatch(BatchRecipeGenerationRequest request, OutputStream outputStream) throws IOException {
+        recipeGeneratorService.generateThemeBatchStreaming(request.theme(), request.count(), request.preferences(),
+                outputStream,
+                recipe -> {
+                    recipe.setSourceVersion(appVersion);
+                    return recipeRepository.save(recipe);
+                });
+    }
+
+    /**
      * Searches recipes by text or tag and returns a page of summaries.
      *
      * @param search optional free-text search

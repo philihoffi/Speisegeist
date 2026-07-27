@@ -63,6 +63,28 @@ public class RecipeController {
     }
 
     /**
+     * Generates a batch of recipes from a free-text theme and streams them as
+     * newline-delimited JSON events ({@code recipe}, {@code recipe-error},
+     * {@code batch-progress}, {@code batch-complete}).
+     *
+     * @param request the batch generation request
+     * @return a streaming response
+     */
+    @PostMapping("/generate-batch-stream")
+    public ResponseEntity<org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody> generateBatchStream(
+            @Valid @RequestBody BatchRecipeGenerationRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .contentType(MediaType.valueOf("application/x-ndjson"))
+                .body(outputStream -> {
+                    try {
+                        recipeService.generateRecipeBatch(request, outputStream);
+                    } catch (IOException e) {
+                        throw new RuntimeException("Streaming failed", e);
+                    }
+                });
+    }
+
+    /**
      * Searches recipes by text or tag, returning a page of summaries.
      *
      * @param search optional free-text search (name, ingredient, or tag)
