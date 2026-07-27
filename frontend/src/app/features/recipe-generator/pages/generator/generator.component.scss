@@ -1,4 +1,20 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.generator-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
 .generator {
+  // Auto top/bottom margin centers the card in leftover space, but
+  // collapses to 0 (no clipping) if the form is taller than the viewport.
+  margin-top: auto !important;
+  margin-bottom: auto !important;
   max-width: 1100px;
   padding: 28px 28px 36px;
 

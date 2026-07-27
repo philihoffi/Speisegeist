@@ -22,13 +22,6 @@
   }
 }
 
-.search-field {
-  display: block;
-  width: 100%;
-  max-width: 400px;
-  margin: 0 auto 24px;
-}
-
 .recipe-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
