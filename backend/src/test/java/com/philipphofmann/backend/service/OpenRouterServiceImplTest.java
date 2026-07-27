@@ -201,6 +201,7 @@ class OpenRouterServiceImplTest {
 
         assertThat(image.data()).containsExactly(1, 2, 3, 4);
         assertThat(image.mediaType()).isEqualTo(MediaType.IMAGE_PNG_VALUE);
+        server.verify();
     }
 
     @Test
@@ -211,6 +212,7 @@ class OpenRouterServiceImplTest {
         assertThatThrownBy(() -> service.generateImage("x", "1024x1024", "medium", 1))
                 .isInstanceOf(RecipeGenerationException.class)
                 .hasMessageContaining("Keine Bilddaten");
+        server.verify();
     }
 
     @Test
@@ -222,6 +224,7 @@ class OpenRouterServiceImplTest {
         assertThatThrownBy(() -> service.generateImage("x", "1024x1024", "medium", 1))
                 .isInstanceOf(RecipeGenerationException.class)
                 .hasMessageContaining("content policy");
+        server.verify();
     }
 
     @Test
@@ -233,6 +236,7 @@ class OpenRouterServiceImplTest {
         assertThatThrownBy(() -> service.generateImage("x", "1024x1024", "medium", 1))
                 .isInstanceOf(RecipeGenerationException.class)
                 .hasMessageContaining("weder eine Bild-URL noch b64_json");
+        server.verify();
     }
 
     @Test

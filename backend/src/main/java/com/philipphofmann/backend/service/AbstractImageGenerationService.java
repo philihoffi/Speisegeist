@@ -83,8 +83,12 @@ public abstract class AbstractImageGenerationService<E, I> {
         try {
             return future.join();
         } catch (CompletionException e) {
-            if (e.getCause() instanceof RuntimeException re) {
+            Throwable cause = e.getCause();
+            if (cause instanceof RuntimeException re) {
                 throw re;
+            }
+            if (cause instanceof Error err) {
+                throw err;
             }
             throw e;
         }

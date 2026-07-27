@@ -16,6 +16,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -48,7 +49,7 @@ class AbstractImageGenerationServiceTest {
 
     @Test
     void coalescesConcurrentGenerationForTheSameId() throws Exception {
-        when(repository.findById(id)).thenReturn(Optional.empty());
+        CountDownLatch secondLookupDone = stubFindByIdSignalingSecondCall();
         when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         CountDownLatch entered = new CountDownLatch(1);
@@ -66,7 +67,9 @@ class AbstractImageGenerationServiceTest {
 
             // second caller arrives while the first is still generating
             Future<String> second = pool.submit(() -> service.getOrCreateImage(id));
-            Thread.sleep(200); // give it time to join the in-flight future before we unblock it
+            // wait until the 2nd caller has actually reached the in-flight lookup before
+            // unblocking generation, instead of guessing with a fixed sleep
+            assertThat(secondLookupDone.await(2, TimeUnit.SECONDS)).isTrue();
             proceed.countDown();
 
             assertThat(first.get(2, TimeUnit.SECONDS)).isSameAs(second.get(2, TimeUnit.SECONDS));
@@ -80,7 +83,7 @@ class AbstractImageGenerationServiceTest {
 
     @Test
     void releasesWaitingCallersWhenGenerationFails() throws Exception {
-        when(repository.findById(id)).thenReturn(Optional.empty());
+        CountDownLatch secondLookupDone = stubFindByIdSignalingSecondCall();
 
         CountDownLatch entered = new CountDownLatch(1);
         CountDownLatch proceed = new CountDownLatch(1);
@@ -96,7 +99,7 @@ class AbstractImageGenerationServiceTest {
             assertThat(entered.await(2, TimeUnit.SECONDS)).isTrue();
 
             Future<String> second = pool.submit(() -> service.getOrCreateImage(id));
-            Thread.sleep(200);
+            assertThat(secondLookupDone.await(2, TimeUnit.SECONDS)).isTrue();
             proceed.countDown();
 
             assertThatThrownBy(() -> first.get(2, TimeUnit.SECONDS))
@@ -108,6 +111,24 @@ class AbstractImageGenerationServiceTest {
         }
 
         verify(openRouterService, times(1)).generateImage(any(), any(), any(), any());
+    }
+
+    /**
+     * Stubs {@code repository.findById(id)} to always return empty, and returns a latch that
+     * opens once the <em>second</em> caller has made that lookup — i.e. once it is about to
+     * join the first caller's in-flight generation. Deterministic alternative to a fixed sleep
+     * for sequencing the two concurrent callers in the tests above.
+     */
+    private CountDownLatch stubFindByIdSignalingSecondCall() {
+        AtomicInteger calls = new AtomicInteger();
+        CountDownLatch secondLookupDone = new CountDownLatch(1);
+        when(repository.findById(id)).thenAnswer(inv -> {
+            if (calls.incrementAndGet() == 2) {
+                secondLookupDone.countDown();
+            }
+            return Optional.empty();
+        });
+        return secondLookupDone;
     }
 
     private static class TestImageGenerationService extends AbstractImageGenerationService<UUID, String> {
